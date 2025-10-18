@@ -1,36 +1,30 @@
-import React, { useState, useRef, useEffect, WheelEvent, MouseEvent, useCallback } from 'react';
-import type { Location } from '../../types';
+import React, { useState, useRef, useEffect, MouseEvent, useCallback } from 'react';
+import type { GeolocationState } from '../../types';
 import { PinIcon } from '../../components/icons';
 import { useTimer } from '../../hooks/useTimer';
 
 interface ControlCenterProps {
-  targetLocation: Location;
+  locationState: GeolocationState;
   radius: number;
-  currentLocation: Location | null;
-  isInside: boolean | null;
-  distance: number | null;
-  error: string | null;
   isGeofenceOverridden: boolean;
   isClockedIn: boolean;
   clockInTime: Date | null;
-  onClockToggle: () => void;
   timeMultiplier: number;
+  onClockToggle: () => void;
   canClockIn: boolean;
 }
 
 const ControlCenter: React.FC<ControlCenterProps> = ({
-  currentLocation,
-  isInside,
-  distance,
+  locationState,
   radius,
-  error,
   isGeofenceOverridden,
   isClockedIn,
   clockInTime,
-  onClockToggle,
   timeMultiplier,
-  canClockIn
+  onClockToggle,
+  canClockIn,
 }) => {
+  const { currentLocation, isInside, distance, error } = locationState;
   const [transform, setTransform] = useState({ scale: 1, x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -57,7 +51,7 @@ const ControlCenter: React.FC<ControlCenterProps> = ({
 
   let userDotStyle: React.CSSProperties = { visibility: 'hidden' };
 
-  if (distance !== null && currentLocation) {
+  if (distance !== null && currentLocation && radius) {
     const pixelsPerMeter = MAP_RADIUS_PX / radius;
     const distanceInPixels = distance * pixelsPerMeter;
     const displayPixels = Math.min(distanceInPixels, MAX_DISPLAY_RADIUS_PX);
@@ -75,7 +69,7 @@ const ControlCenter: React.FC<ControlCenterProps> = ({
   
   const handleMouseDown = useCallback((e: MouseEvent<HTMLDivElement>) => {
     e.preventDefault();
-    e.stopPropagation(); // Stop mousedown event from triggering page drag-scroll
+    e.stopPropagation();
     setIsDragging(true);
   }, []);
   
@@ -111,7 +105,6 @@ const ControlCenter: React.FC<ControlCenterProps> = ({
         });
     };
 
-    // Add native event listener with { passive: false } to ensure preventDefault works
     element.addEventListener('wheel', handleNativeWheel, { passive: false });
 
     if (isDragging) {
@@ -191,10 +184,7 @@ const ControlCenter: React.FC<ControlCenterProps> = ({
       <div className="p-4 text-center space-y-4">
           <div>
             <h2 className="text-xs font-bold text-slate-500 tracking-wider uppercase">Total Hours</h2>
-            <p 
-                key={isClockedIn ? 'timer-running' : 'timer-stopped'}
-                className={`text-5xl font-light text-slate-800 tracking-tighter mt-1 ${isClockedIn && clockInTime ? 'animate-fadeInUp' : ''}`}
-            >
+            <p className="text-5xl font-light text-slate-800 tracking-tighter mt-1">
                 {timer}
             </p>
           </div>

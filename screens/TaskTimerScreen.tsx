@@ -55,8 +55,8 @@ const TaskTimerScreen: React.FC<TaskTimerScreenProps> = ({ project, isGeofenceOv
         if (clockInTime) {
           const durationSeconds = Math.floor((new Date().getTime() - clockInTime.getTime()) / 1000);
           const simulatedDuration = durationSeconds * timeMultiplier;
-          // Round down to the nearest minute to avoid dealing with seconds in allocation
-          const totalMinutes = Math.floor(simulatedDuration / 60);
+          // Round to the nearest minute to ensure allocation logic matches display.
+          const totalMinutes = Math.round(simulatedDuration / 60);
           onShiftEnd(totalMinutes * 60);
         }
         setClockInTime(null);

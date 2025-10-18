@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import TaskList from '../components/TaskList';
 import ControlCenter from '../components/ControlCenter';
 import { useGeolocation } from '../../hooks/useGeolocation';
-import { TARGET_LOCATION, GEOFENCE_RADIUS_METERS } from '../../constants';
+import { TARGET_LOCATION, GEOFENCE_RADIUS_METERS, TASKS } from '../../constants';
 import type { GeolocationState, Project, Location } from '../../types';
 import { useDragToScroll } from '../../hooks/useDragToScroll';
 
@@ -11,7 +11,7 @@ interface TaskTimerScreenProps {
   isGeofenceOverridden: boolean;
   timeMultiplier: number;
   simulatedDistance: number;
-  onShiftEnd: (totalSeconds: number) => void;
+  onShiftEnd: (data: { totalSeconds: number; finalTaskTimes: Record<number, number> }) => void;
 }
 
 const TaskTimerScreen: React.FC<TaskTimerScreenProps> = ({ project, isGeofenceOverridden, timeMultiplier, simulatedDistance, onShiftEnd }) => {
@@ -21,88 +21,123 @@ const TaskTimerScreen: React.FC<TaskTimerScreenProps> = ({ project, isGeofenceOv
   const scrollRef = useRef<HTMLElement>(null);
   useDragToScroll(scrollRef);
   
-  // Calculate a simulated location based on the distance from the testing slider
-  useEffect(() => {
-    // 1 degree of latitude is approximately 111.1km
-    const latitudeOffset = simulatedDistance / 111100;
-    
-    const newLocation: Location = {
-      latitude: TARGET_LOCATION.latitude + latitudeOffset,
-      longitude: TARGET_LOCATION.longitude,
-    };
-    setSimulatedLocation(newLocation);
-  }, [simulatedDistance]);
+  const [taskTimers, setTaskTimers] = useState<Record<number, number>>(() => 
+    TASKS.reduce((acc, task) => ({ ...acc, [task.id]: 0 }), {})
+  );
+  const [activeTask, setActiveTask] = useState<{ id: number; startTime: number } | null>(null);
+  const [currentTime, setCurrentTime] = useState(Date.now());
 
+  useEffect(() => {
+    if (activeTask && isClockedIn) {
+      const timer = setInterval(() => setCurrentTime(Date.now()), 1000);
+      return () => clearInterval(timer);
+    }
+  }, [activeTask, isClockedIn]);
+  
   const locationState: GeolocationState = useGeolocation(TARGET_LOCATION, GEOFENCE_RADIUS_METERS, simulatedLocation);
   const [showGeofenceWarning, setShowGeofenceWarning] = useState<boolean>(false);
-
   const effectiveIsInside = locationState.isInside || isGeofenceOverridden;
+
+  const handleTaskTimerToggle = useCallback((taskId: number) => {
+    if (!isClockedIn) return;
+
+    setTaskTimers(prevTimers => {
+      let updatedTimers = { ...prevTimers };
+      let newActiveTask = null;
+
+      if (activeTask) {
+        const elapsed = (Date.now() - activeTask.startTime) * timeMultiplier;
+        updatedTimers[activeTask.id] += Math.round(elapsed / 1000);
+      }
+      
+      if (activeTask?.id !== taskId) {
+        newActiveTask = { id: taskId, startTime: Date.now() };
+      }
+
+      setActiveTask(newActiveTask);
+      return updatedTimers;
+    });
+  }, [isClockedIn, activeTask, timeMultiplier]);
+
 
   const handleClockToggle = useCallback(() => {
     if (!effectiveIsInside && !isClockedIn) {
         setShowGeofenceWarning(true);
-        setTimeout(() => setShowGeofenceWarning(false), 5000);
+        setTimeout(() => setShowGeofenceWarning(false), 3000);
         return;
     }
 
-    setIsClockedIn(prev => {
-      if (!prev) {
-        // Clocking IN
+    setIsClockedIn(prevIsClockedIn => {
+      // Clocking OUT
+      if (prevIsClockedIn) {
+        let finalTaskTimes = { ...taskTimers };
+        if (activeTask) {
+          const elapsed = (Date.now() - activeTask.startTime) * timeMultiplier;
+          finalTaskTimes[activeTask.id] += Math.round(elapsed / 1000);
+        }
+
+        const totalShiftSeconds = clockInTime
+          ? Math.floor(((new Date().getTime() - clockInTime.getTime()) / 1000) * timeMultiplier)
+          : 0;
+
+        // Round to the nearest minute for allocation.
+        const totalMinutes = Math.round(totalShiftSeconds / 60);
+        const roundedTotalSeconds = totalMinutes * 60;
+
+        onShiftEnd({ totalSeconds: roundedTotalSeconds, finalTaskTimes });
+        
+        // Reset state
+        setClockInTime(null);
+        setActiveTask(null);
+        setTaskTimers(TASKS.reduce((acc, task) => ({ ...acc, [task.id]: 0 }), {}));
+        return false;
+      } 
+      // Clocking IN
+      else {
         setClockInTime(new Date());
         return true;
-      } else {
-        // Clocking OUT
-        if (clockInTime) {
-          const durationSeconds = Math.floor((new Date().getTime() - clockInTime.getTime()) / 1000);
-          const simulatedDuration = durationSeconds * timeMultiplier;
-          // Round down to the nearest minute to avoid dealing with seconds in allocation
-          const totalMinutes = Math.floor(simulatedDuration / 60);
-          onShiftEnd(totalMinutes * 60);
-        }
-        setClockInTime(null);
-        return false;
       }
     });
-  }, [effectiveIsInside, isClockedIn, clockInTime, timeMultiplier, onShiftEnd]);
+  }, [effectiveIsInside, activeTask, taskTimers, timeMultiplier, onShiftEnd, clockInTime]);
 
   useEffect(() => {
-    // Automatically clock out if user leaves the geofence
-    if (isClockedIn && !effectiveIsInside) {
-        setIsClockedIn(false);
-        setClockInTime(null);
-        // Optionally show a notification to the user
-        alert("You have been automatically clocked out for leaving the job site.");
-    }
-  }, [isClockedIn, effectiveIsInside]);
+    const latitudeOffset = simulatedDistance / 111100;
+    setSimulatedLocation({
+      latitude: TARGET_LOCATION.latitude + latitudeOffset,
+      longitude: TARGET_LOCATION.longitude,
+    });
+  }, [simulatedDistance]);
 
   return (
     <div className="flex flex-col h-full">
       <main ref={scrollRef} className="flex-grow px-4 pt-3 pb-4 space-y-6 overflow-y-auto no-scrollbar">
-          
           <ControlCenter
-            targetLocation={TARGET_LOCATION}
+            locationState={locationState}
             radius={GEOFENCE_RADIUS_METERS}
-            currentLocation={locationState.currentLocation}
-            isInside={locationState.isInside}
-            distance={locationState.distance}
-            error={locationState.error}
             isGeofenceOverridden={isGeofenceOverridden}
             isClockedIn={isClockedIn}
             clockInTime={clockInTime}
-            onClockToggle={handleClockToggle}
             timeMultiplier={timeMultiplier}
+            onClockToggle={handleClockToggle}
             canClockIn={effectiveIsInside}
           />
 
           {showGeofenceWarning && (
-              <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-md" role="alert">
-                  <p className="font-bold">Location Warning</p>
+              <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-md animate-fadeIn" role="alert">
                   <p>You must be inside the job site to clock in.</p>
               </div>
           )}
         
         <h2 className="text-slate-800 font-bold text-xl pt-2">Today's tasks</h2>
-        <TaskList />
+        <TaskList 
+          isClockedIn={isClockedIn}
+          activeTaskId={activeTask?.id || null}
+          taskTimers={taskTimers}
+          onTaskTimerToggle={handleTaskTimerToggle}
+          currentTime={currentTime}
+          activeTaskStartTime={activeTask?.startTime || null}
+          timeMultiplier={timeMultiplier}
+        />
       </main>
     </div>
   );

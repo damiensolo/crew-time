@@ -34,11 +34,22 @@ const TimeAllocationScreen: React.FC<TimeAllocationScreenProps> = ({
       [taskId]: seconds,
     }));
   };
+  
+  const getButtonText = () => {
+    if (!isSubmissionDisabled) {
+      return 'Confirm Allocation';
+    }
+    if (remainingSeconds > 0) {
+      return `Allocate remaining ${formatTime(remainingSeconds)}`;
+    }
+    // remainingSeconds is negative (overallocated)
+    return `Overallocated by ${formatTime(Math.abs(remainingSeconds))}`;
+  };
 
   return (
     <div className="flex flex-col h-full bg-slate-100">
       <header className="bg-slate-800 text-slate-100 p-4 flex items-center justify-center relative h-[60px] flex-shrink-0">
-        <h1 className="text-lg font-bold">Allocate & Validate Time</h1>
+        <h1 className="text-lg font-bold">Shift Details</h1>
         <button onClick={onCancel} className="absolute right-4 text-sm font-semibold">Cancel</button>
       </header>
 
@@ -55,7 +66,7 @@ const TimeAllocationScreen: React.FC<TimeAllocationScreenProps> = ({
             <div>
                 <p className="text-xs font-bold text-slate-500 tracking-wider uppercase">Remaining</p>
                 <p className={`text-2xl font-semibold tracking-tight mt-1 ${remainingSeconds === 0 ? 'text-green-600' : 'text-red-500'}`}>
-                    {formatTime(remainingSeconds)}
+                    {formatTime(Math.max(0, remainingSeconds))}
                 </p>
             </div>
         </div>
@@ -85,7 +96,7 @@ const TimeAllocationScreen: React.FC<TimeAllocationScreenProps> = ({
               : 'bg-green-600 hover:bg-green-700'
           }`}
         >
-          {isSubmissionDisabled ? `Allocate remaining ${formatTime(remainingSeconds)}` : 'Confirm Allocation'}
+          {getButtonText()}
         </button>
       </footer>
     </div>

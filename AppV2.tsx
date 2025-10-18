@@ -13,7 +13,10 @@ interface AppV2Props {
 
 const AppV2: React.FC<AppV2Props> = ({ isGeofenceOverridden, timeMultiplier, simulatedDistance }) => {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-  const [shiftDataForAllocation, setShiftDataForAllocation] = useState<{ totalSeconds: number } | null>(null);
+  const [shiftDataForAllocation, setShiftDataForAllocation] = useState<{ 
+    totalSeconds: number;
+    initialAllocations: Record<number, number>;
+  } | null>(null);
 
   const handleSelectProject = useCallback((project: Project) => {
     setSelectedProject(project);
@@ -23,8 +26,11 @@ const AppV2: React.FC<AppV2Props> = ({ isGeofenceOverridden, timeMultiplier, sim
     setSelectedProject(null);
   }, []);
 
-  const handleShiftEnd = useCallback((totalSeconds: number) => {
-    setShiftDataForAllocation({ totalSeconds });
+  const handleShiftEnd = useCallback((data: { totalSeconds: number; finalTaskTimes: Record<number, number> }) => {
+    setShiftDataForAllocation({ 
+      totalSeconds: data.totalSeconds, 
+      initialAllocations: data.finalTaskTimes 
+    });
   }, []);
 
   const handleAllocationComplete = useCallback(() => {
@@ -73,6 +79,7 @@ const AppV2: React.FC<AppV2Props> = ({ isGeofenceOverridden, timeMultiplier, sim
         {shiftDataForAllocation && (
           <TimeAllocationScreen
             totalShiftSeconds={shiftDataForAllocation.totalSeconds}
+            initialAllocations={shiftDataForAllocation.initialAllocations}
             onConfirm={handleAllocationComplete}
             onCancel={handleAllocationComplete}
           />

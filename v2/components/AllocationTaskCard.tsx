@@ -1,30 +1,22 @@
 import React from 'react';
 import type { Task } from '../../types';
+import { formatTime } from '../../hooks/useTimer';
 import { ClockIcon } from '../../components/icons';
 
-interface AllocationTaskCardProps {
-  task: Task;
-  allocatedSeconds: number;
-  onAllocationChange: (taskId: number, seconds: number) => void;
+interface TimeInputProps {
+  label: string;
+  totalSeconds: number;
+  onTimeChange: (newHours: number, newMinutes: number) => void;
 }
 
-const AllocationTaskCard: React.FC<AllocationTaskCardProps> = ({
-  task,
-  allocatedSeconds,
-  onAllocationChange,
-}) => {
-  const hours = Math.floor(allocatedSeconds / 3600);
-  const minutes = Math.floor((allocatedSeconds % 3600) / 60);
+const TimeInput: React.FC<TimeInputProps> = ({ label, totalSeconds, onTimeChange }) => {
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
 
-  const handleTimeChange = (newHours: number, newMinutes: number) => {
-    const totalSeconds = (newHours * 3600) + (newMinutes * 60);
-    onAllocationChange(task.id, totalSeconds);
-  };
-  
   const handleHoursChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let newHours = parseInt(e.target.value, 10);
     if (isNaN(newHours) || newHours < 0) newHours = 0;
-    handleTimeChange(newHours, minutes);
+    onTimeChange(newHours, minutes);
   };
 
   const handleMinutesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -34,38 +26,85 @@ const AllocationTaskCard: React.FC<AllocationTaskCardProps> = ({
     } else if (newMinutes > 59) {
         newMinutes = 59;
     }
-    handleTimeChange(hours, newMinutes);
+    onTimeChange(hours, newMinutes);
   };
 
   return (
-    <div className="bg-slate-50 rounded-lg p-3 flex items-center justify-between transition-shadow hover:shadow-md">
-      <div className="flex items-center space-x-3 min-w-0">
-        <ClockIcon className="w-6 h-6 text-slate-400 flex-shrink-0" />
-        <div className="min-w-0">
-          <h3 className="font-semibold text-slate-800 text-base truncate">{task.name}</h3>
-          <span className="text-xs font-semibold text-slate-500 bg-slate-200 px-2 py-0.5 rounded-full flex-shrink-0">{task.type}</span>
-        </div>
-      </div>
+    <div className="flex items-center justify-between">
+      <label htmlFor={`${label}-${hours}-${minutes}`} className="text-sm font-medium text-slate-600">{label}</label>
       <div className="flex items-center space-x-2">
         <div className="relative">
           <input
+            id={`${label}-${hours}-${minutes}-hours`}
             type="number"
             value={hours.toString().padStart(2, '0')}
             onChange={handleHoursChange}
             min="0"
-            className="w-16 h-10 text-center bg-white border border-slate-300 rounded-md font-mono text-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-            aria-label={`Hours for ${task.name}`}
+            className="w-16 h-10 text-center bg-white border border-slate-300 rounded-md font-mono text-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            aria-label={`${label} hours`}
           />
           <span className="absolute -right-2 top-1/2 -translate-y-1/2 text-slate-400 font-bold">:</span>
         </div>
         <input
+          id={`${label}-${hours}-${minutes}-minutes`}
           type="number"
           value={minutes.toString().padStart(2, '0')}
           onChange={handleMinutesChange}
           min="0"
           max="59"
-          className="w-16 h-10 text-center bg-white border border-slate-300 rounded-md font-mono text-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-          aria-label={`Minutes for ${task.name}`}
+          className="w-16 h-10 text-center bg-white border border-slate-300 rounded-md font-mono text-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          aria-label={`${label} minutes`}
+        />
+      </div>
+    </div>
+  );
+};
+
+interface AllocationTaskCardProps {
+  task: Task;
+  trackedSeconds: number;
+  manualSeconds: number;
+  onAllocationChange: (taskId: number, type: 'tracked' | 'manual', seconds: number) => void;
+}
+
+const AllocationTaskCard: React.FC<AllocationTaskCardProps> = ({
+  task,
+  trackedSeconds,
+  manualSeconds,
+  onAllocationChange,
+}) => {
+  const totalTaskSeconds = trackedSeconds + manualSeconds;
+
+  const handleTimeChange = (type: 'tracked' | 'manual', newHours: number, newMinutes: number) => {
+    const totalSeconds = (newHours * 3600) + (newMinutes * 60);
+    onAllocationChange(task.id, type, totalSeconds);
+  };
+
+  return (
+    <div className="bg-slate-50 rounded-lg p-4 flex flex-col space-y-3 transition-shadow hover:shadow-md border border-slate-200">
+      <div className="flex items-center justify-between">
+        <div className="min-w-0">
+          <h3 className="font-semibold text-slate-800 text-base truncate">{task.name}</h3>
+          <span className="text-xs font-semibold text-slate-500 bg-slate-200 px-2 py-0.5 rounded-full flex-shrink-0">{task.type}</span>
+        </div>
+        <div className="flex items-center space-x-1 text-sm font-bold text-slate-700 whitespace-nowrap">
+          <ClockIcon className="w-4 h-4" />
+          <span>{formatTime(totalTaskSeconds, { showSeconds: false })} total</span>
+        </div>
+      </div>
+      
+      <hr className="border-slate-200" />
+      
+      <div className="space-y-2">
+        <TimeInput 
+            label="Tracked Time" 
+            totalSeconds={trackedSeconds}
+            onTimeChange={(h, m) => handleTimeChange('tracked', h, m)} 
+        />
+        <TimeInput 
+            label="Untracked Time" 
+            totalSeconds={manualSeconds}
+            onTimeChange={(h, m) => handleTimeChange('manual', h, m)} 
         />
       </div>
     </div>

@@ -1,44 +1,77 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { TASKS } from '../../constants';
 import AllocationTaskCard from '../components/AllocationTaskCard';
 import { formatTime } from '../../hooks/useTimer';
 import { useDragToScroll } from '../../hooks/useDragToScroll';
-import { useRef } from 'react';
+
+interface Allocation {
+  tracked: number;
+  manual: number;
+}
 
 interface TimeAllocationScreenProps {
   totalShiftSeconds: number;
+  initialAllocations: Record<number, number>; // This is the auto-tracked time
   onConfirm: () => void;
   onCancel: () => void;
 }
 
 const TimeAllocationScreen: React.FC<TimeAllocationScreenProps> = ({
   totalShiftSeconds,
+  initialAllocations,
   onConfirm,
   onCancel
 }) => {
-  const [allocations, setAllocations] = useState<Record<number, number>>({});
+  const [allocations, setAllocations] = useState<Record<number, Allocation>>(() => {
+    return TASKS.reduce((acc, task) => {
+      const trackedSeconds = initialAllocations[task.id] || 0;
+      // Round to the nearest minute to align with the rounded total shift time
+      const trackedMinutes = Math.round(trackedSeconds / 60);
+      acc[task.id] = {
+        tracked: trackedMinutes * 60, // Store as seconds
+        manual: 0,
+      };
+      return acc;
+    }, {} as Record<number, Allocation>);
+  });
+
   const scrollRef = useRef<HTMLDivElement>(null);
   useDragToScroll(scrollRef);
 
   const totalAllocatedSeconds = useMemo(() => {
-    // FIX: Operator '+' cannot be applied to types 'unknown' and 'unknown'. Explicitly type the accumulator and value.
-    return Object.values(allocations).reduce((sum: number, seconds: number) => sum + (seconds || 0), 0);
+    return Object.values(allocations).reduce((sum: number, alloc: Allocation) => {
+      return sum + (alloc.tracked || 0) + (alloc.manual || 0);
+    }, 0);
   }, [allocations]);
 
   const remainingSeconds = totalShiftSeconds - totalAllocatedSeconds;
   const isSubmissionDisabled = remainingSeconds !== 0;
 
-  const handleAllocationChange = (taskId: number, seconds: number) => {
+  const handleAllocationChange = (taskId: number, type: 'tracked' | 'manual', seconds: number) => {
     setAllocations(prev => ({
       ...prev,
-      [taskId]: seconds,
+      [taskId]: {
+        ...prev[taskId],
+        [type]: seconds,
+      },
     }));
+  };
+
+  const getButtonText = () => {
+    if (!isSubmissionDisabled) {
+      return 'Send for approval';
+    }
+    if (remainingSeconds > 0) {
+      return `Allocate remaining ${formatTime(remainingSeconds)}`;
+    }
+    // remainingSeconds is negative (overallocated)
+    return `Overallocated by ${formatTime(Math.abs(remainingSeconds))}`;
   };
 
   return (
     <div className="flex flex-col h-full bg-slate-100">
       <header className="bg-slate-800 text-slate-100 p-4 flex items-center justify-center relative h-[60px] flex-shrink-0">
-        <h1 className="text-lg font-bold">Allocate & Validate Time (V2)</h1>
+        <h1 className="text-lg font-bold">Shift Details</h1>
         <button onClick={onCancel} className="absolute right-4 text-sm font-semibold">Cancel</button>
       </header>
 
@@ -55,7 +88,7 @@ const TimeAllocationScreen: React.FC<TimeAllocationScreenProps> = ({
             <div>
                 <p className="text-xs font-bold text-slate-500 tracking-wider uppercase">Remaining</p>
                 <p className={`text-2xl font-semibold tracking-tight mt-1 ${remainingSeconds === 0 ? 'text-green-600' : 'text-red-500'}`}>
-                    {formatTime(remainingSeconds)}
+                    {formatTime(Math.max(0, remainingSeconds))}
                 </p>
             </div>
         </div>
@@ -64,15 +97,15 @@ const TimeAllocationScreen: React.FC<TimeAllocationScreenProps> = ({
             <div className="space-y-2">
                 {TASKS.map(task => (
                     <AllocationTaskCard
-                    key={task.id}
-                    task={task}
-                    allocatedSeconds={allocations[task.id] || 0}
-                    onAllocationChange={handleAllocationChange}
+                      key={task.id}
+                      task={task}
+                      trackedSeconds={allocations[task.id]?.tracked || 0}
+                      manualSeconds={allocations[task.id]?.manual || 0}
+                      onAllocationChange={handleAllocationChange}
                     />
                 ))}
             </div>
         </div>
-
       </main>
 
       <footer className="p-4 bg-white/75 backdrop-blur-xl border-t border-slate-200 flex-shrink-0">
@@ -85,7 +118,7 @@ const TimeAllocationScreen: React.FC<TimeAllocationScreenProps> = ({
               : 'bg-green-600 hover:bg-green-700'
           }`}
         >
-          {isSubmissionDisabled ? `Allocate remaining ${formatTime(remainingSeconds)}` : 'Confirm Allocation'}
+          {getButtonText()}
         </button>
       </footer>
     </div>
