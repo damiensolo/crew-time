@@ -7,6 +7,7 @@ interface HeaderProps {
     showBackButton?: boolean;
     showMoreOptionsButton?: boolean;
     onMoreOptions?: () => void;
+    version?: 'v1' | 'v2';
 }
 
 const LinarcLogo = () => (
@@ -22,7 +23,7 @@ const LinarcLogo = () => (
 );
 
 
-const Header: React.FC<HeaderProps> = ({ title, onBack, showBackButton = false, showMoreOptionsButton = false, onMoreOptions }) => {
+const Header: React.FC<HeaderProps> = ({ title, onBack, showBackButton = false, showMoreOptionsButton = false, onMoreOptions, version }) => {
   return (
     <header className="bg-slate-800 text-slate-100 px-4 flex items-center justify-between border-b border-slate-700 z-20 h-[44px] flex-shrink-0">
       <div className="flex-1 flex justify-start">
@@ -31,7 +32,14 @@ const Header: React.FC<HeaderProps> = ({ title, onBack, showBackButton = false, 
               <ChevronLeftIcon className="w-6 h-6" />
             </button>
         ) : (
-            <LinarcLogo />
+            <div className="flex items-center space-x-2">
+                <LinarcLogo />
+                {version && (
+                    <span className="bg-slate-700 text-slate-300 text-xs font-bold px-2 py-0.5 rounded-md">
+                        {version.toUpperCase()}
+                    </span>
+                )}
+            </div>
         )}
       </div>
       

@@ -1,64 +1,70 @@
-import { useRef, useEffect, useState, RefObject } from 'react';
+import { useRef, useEffect, RefObject } from 'react';
 
 export const useDragToScroll = (ref: RefObject<HTMLElement>) => {
-  const [isDragging, setIsDragging] = useState(false);
+  const isDragging = useRef(false);
   const startY = useRef(0);
   const scrollTop = useRef(0);
 
-  const handleMouseDown = (e: MouseEvent) => {
-    if (!ref.current) return;
-    setIsDragging(true);
-    startY.current = e.pageY - ref.current.offsetTop;
-    scrollTop.current = ref.current.scrollTop;
-    ref.current.style.cursor = 'grabbing';
-    ref.current.style.userSelect = 'none';
-  };
-
-  const handleMouseLeave = () => {
-    setIsDragging(false);
-    if (ref.current) {
-      ref.current.style.cursor = 'grab';
-      ref.current.style.userSelect = 'auto';
-    }
-  };
-
-  const handleMouseUp = () => {
-    setIsDragging(false);
-     if (ref.current) {
-      ref.current.style.cursor = 'grab';
-      ref.current.style.userSelect = 'auto';
-    }
-  };
-
-  const handleMouseMove = (e: MouseEvent) => {
-    if (!isDragging || !ref.current) return;
-    e.preventDefault();
-    const y = e.pageY - ref.current.offsetTop;
-    const walk = (y - startY.current) * 2; // scroll-fast
-    ref.current.scrollTop = scrollTop.current - walk;
-  };
-  
   useEffect(() => {
     const element = ref.current;
-    if (element) {
+    if (!element) return;
+
+    const handleMouseDown = (e: MouseEvent) => {
+      // Prevent starting a drag on interactive elements like buttons or inputs,
+      // which would interfere with their default behavior.
+      const target = e.target as HTMLElement;
+      if (target.closest('button, input, a, select, textarea')) {
+        return;
+      }
+
+      isDragging.current = true;
+      startY.current = e.pageY - element.offsetTop;
+      scrollTop.current = element.scrollTop;
+      
+      // Apply styles to indicate dragging and prevent text selection
+      element.style.cursor = 'grabbing';
+      element.style.userSelect = 'none';
+
+      // Add listeners to the document to handle mouse movement and release
+      // anywhere on the page, making the drag feel more robust.
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    };
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragging.current) return;
+      e.preventDefault(); // Prevent other unwanted interactions during drag
+      const y = e.pageY - element.offsetTop;
+      const walk = (y - startY.current) * 2; // Multiplier for faster scrolling
+      element.scrollTop = scrollTop.current - walk;
+    };
+    
+    const handleMouseUp = () => {
+      if (!isDragging.current) return;
+      isDragging.current = false;
+      
+      // Restore original cursor and text selection behavior
+      if (element) {
         element.style.cursor = 'grab';
-        
-        const currentHandleMouseDown = (e: Event) => handleMouseDown(e as unknown as MouseEvent);
-        const currentHandleMouseLeave = () => handleMouseLeave();
-        const currentHandleMouseUp = () => handleMouseUp();
-        const currentHandleMouseMove = (e: Event) => handleMouseMove(e as unknown as MouseEvent);
+        element.style.userSelect = 'auto';
+      }
 
-        element.addEventListener('mousedown', currentHandleMouseDown);
-        element.addEventListener('mouseleave', currentHandleMouseLeave);
-        element.addEventListener('mouseup', currentHandleMouseUp);
-        element.addEventListener('mousemove', currentHandleMouseMove);
+      // Clean up document-level event listeners
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
 
-        return () => {
-            element.removeEventListener('mousedown', currentHandleMouseDown);
-            element.removeEventListener('mouseleave', currentHandleMouseLeave);
-            element.removeEventListener('mouseup', currentHandleMouseUp);
-            element.removeEventListener('mousemove', currentHandleMouseMove);
-        };
-    }
-  }, [ref, isDragging]);
+    // Initialize cursor style
+    element.style.cursor = 'grab';
+    
+    // Add the primary event listener to the scrollable element
+    element.addEventListener('mousedown', handleMouseDown as EventListener);
+
+    // Main cleanup function for the effect
+    return () => {
+      element.removeEventListener('mousedown', handleMouseDown as EventListener);
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [ref]); // The effect only needs to re-run if the referenced element changes.
 };

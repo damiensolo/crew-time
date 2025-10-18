@@ -1,84 +1,28 @@
-import React, { useState, useCallback } from 'react';
-import TaskTimerScreen from './screens/TaskTimerScreen';
-import ProjectListScreen from './screens/ProjectListScreen';
+import React, { useState } from 'react';
 import TestingToolsPanel from './components/TestingToolsPanel';
-import Header from './components/Header';
-import type { Project } from './types';
-import TimeAllocationScreen from './screens/TimeAllocationScreen';
+import AppV1 from './AppV1';
+import AppV2 from './AppV2';
+
+type AppVersion = 'v1' | 'v2';
 
 const App: React.FC = () => {
-  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [appVersion, setAppVersion] = useState<AppVersion>('v1');
+  
+  // State for testing tools, passed down to the active app version
   const [isGeofenceOverridden, setIsGeofenceOverridden] = useState<boolean>(false);
   const [timeMultiplier, setTimeMultiplier] = useState(1);
-  const [simulatedDistance, setSimulatedDistance] = useState<number>(550); // Start outside
-  const [shiftDataForAllocation, setShiftDataForAllocation] = useState<{ totalSeconds: number } | null>(null);
+  const [simulatedDistance, setSimulatedDistance] = useState<number>(1000); // Start outside at max distance
 
-  const handleSelectProject = useCallback((project: Project) => {
-    setSelectedProject(project);
-  }, []);
-
-  const handleGoBack = useCallback(() => {
-    setSelectedProject(null);
-  }, []);
-
-  const handleShiftEnd = useCallback((totalSeconds: number) => {
-    setShiftDataForAllocation({ totalSeconds });
-  }, []);
-
-  const handleAllocationComplete = useCallback(() => {
-    setShiftDataForAllocation(null);
-  }, []);
-
-  const handleMoreOptions = useCallback(() => {
-    // Placeholder for more options functionality
-    alert('More options clicked!');
-  }, []);
-
+  const appProps = {
+    isGeofenceOverridden,
+    timeMultiplier,
+    simulatedDistance,
+  };
 
   return (
     <>
-      <div className="bg-slate-100 h-full flex flex-col font-sans">
-        <Header 
-          title={selectedProject ? selectedProject.name : 'Projects'}
-          showBackButton={!!selectedProject}
-          onBack={handleGoBack}
-          showMoreOptionsButton={!!selectedProject}
-          onMoreOptions={handleMoreOptions}
-        />
-
-        <div className="relative flex-1 overflow-hidden">
-          <div 
-            className={`absolute top-0 left-0 w-full h-full transition-transform duration-300 ease-in-out ${selectedProject ? '-translate-x-full' : 'translate-x-0'}`}
-          >
-              <ProjectListScreen onSelectProject={handleSelectProject} />
-          </div>
-          
-          <div 
-            className={`absolute top-0 left-0 w-full h-full transition-transform duration-300 ease-in-out ${selectedProject ? 'translate-x-0' : 'translate-x-full'}`}
-          >
-            {selectedProject && (
-              <TaskTimerScreen 
-                project={selectedProject} 
-                isGeofenceOverridden={isGeofenceOverridden}
-                timeMultiplier={timeMultiplier}
-                simulatedDistance={simulatedDistance}
-                onShiftEnd={handleShiftEnd}
-              />
-            )}
-          </div>
-        </div>
-      </div>
-
-      <div className={`absolute top-0 left-0 w-full h-full bg-white z-50 transition-transform duration-300 ease-in-out ${shiftDataForAllocation ? 'translate-y-0' : 'translate-y-full'}`}>
-        {shiftDataForAllocation && (
-          <TimeAllocationScreen
-            totalShiftSeconds={shiftDataForAllocation.totalSeconds}
-            onConfirm={handleAllocationComplete}
-            onCancel={handleAllocationComplete}
-          />
-        )}
-      </div>
-
+      {appVersion === 'v1' ? <AppV1 {...appProps} /> : <AppV2 {...appProps} />}
+      
       <TestingToolsPanel 
         isGeofenceOverridden={isGeofenceOverridden}
         onGeofenceOverrideToggle={() => setIsGeofenceOverridden(prev => !prev)}
@@ -86,6 +30,8 @@ const App: React.FC = () => {
         onSimulatedDistanceChange={setSimulatedDistance}
         timeMultiplier={timeMultiplier}
         onTimeMultiplierChange={setTimeMultiplier}
+        currentVersion={appVersion}
+        onVersionChange={setAppVersion}
       />
     </>
   );

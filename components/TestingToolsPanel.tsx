@@ -1,5 +1,7 @@
 import React from 'react';
 
+type AppVersion = 'v1' | 'v2';
+
 interface TestingToolsPanelProps {
   isGeofenceOverridden: boolean;
   onGeofenceOverrideToggle: () => void;
@@ -7,6 +9,8 @@ interface TestingToolsPanelProps {
   onSimulatedDistanceChange: (distance: number) => void;
   timeMultiplier: number;
   onTimeMultiplierChange: (speed: number) => void;
+  currentVersion: AppVersion;
+  onVersionChange: (version: AppVersion) => void;
 }
 
 const TestingToolsPanel: React.FC<TestingToolsPanelProps> = ({
@@ -16,11 +20,44 @@ const TestingToolsPanel: React.FC<TestingToolsPanelProps> = ({
   onSimulatedDistanceChange,
   timeMultiplier,
   onTimeMultiplierChange,
+  currentVersion,
+  onVersionChange,
 }) => {
+  const maxDistance = 1000;
+
+  const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const sliderValue = Number(e.target.value);
+    onSimulatedDistanceChange(maxDistance - sliderValue);
+  };
+
+  // The slider's value is the inverse of the distance.
+  // Left (0) = max distance, Right (max) = 0 distance.
+  const sliderValue = maxDistance - simulatedDistance;
+
   return (
-    <div className="fixed bottom-4 right-4 bg-white rounded-lg shadow-xl p-4 z-50 max-w-xs w-full space-y-4">
+    <div className="fixed bottom-4 right-4 bg-white rounded-lg shadow-xl p-4 z-[100] max-w-xs w-full space-y-4">
       <div className="text-center">
         <h3 className="text-sm font-bold text-slate-600 tracking-wider uppercase">Testing Tools</h3>
+      </div>
+      
+      <hr/>
+
+      <div className="text-center">
+        <h4 className="text-sm font-semibold text-slate-700">App Version</h4>
+         <div className="flex justify-center rounded-lg bg-slate-200 p-1 mt-3">
+            <button
+                onClick={() => onVersionChange('v1')}
+                className={`w-1/2 rounded-md py-1 text-sm font-semibold transition-colors ${currentVersion === 'v1' ? 'bg-white text-slate-800 shadow' : 'text-slate-600'}`}
+            >
+                V1
+            </button>
+            <button
+                onClick={() => onVersionChange('v2')}
+                className={`w-1/2 rounded-md py-1 text-sm font-semibold transition-colors ${currentVersion === 'v2' ? 'bg-white text-slate-800 shadow' : 'text-slate-600'}`}
+            >
+                V2
+            </button>
+        </div>
       </div>
       
       <hr/>
@@ -48,14 +85,14 @@ const TestingToolsPanel: React.FC<TestingToolsPanelProps> = ({
 
       <div className="text-center">
           <h4 className="text-sm font-semibold text-slate-700">Location Simulator</h4>
-           <p className="text-xs text-slate-500 mt-1 mb-3">Drag to change distance from job site</p>
+           <p className="text-xs text-slate-500 mt-1 mb-3">Drag right to move into geofence</p>
           <input
               type="range"
               min="0"
-              max="1000"
+              max={maxDistance}
               step="10"
-              value={simulatedDistance}
-              onChange={(e) => onSimulatedDistanceChange(Number(e.target.value))}
+              value={sliderValue}
+              onChange={handleSliderChange}
               className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
               aria-label="Simulate location distance"
           />
