@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { Task } from '../../types';
 import { formatTime } from '../../hooks/useTimer';
-import { ClockIcon } from '../../components/icons';
+import { ClockIcon, ChatBubbleIcon, ChevronDownIcon } from '../../components/icons';
 
 interface TimeInputProps {
   label: string;
@@ -37,7 +37,7 @@ const TimeInput: React.FC<TimeInputProps> = ({ label, totalSeconds, onTimeChange
           <input
             id={`${label}-${hours}-${minutes}-hours`}
             type="number"
-            value={hours.toString().padStart(2, '0')}
+            value={hours.toString()}
             onChange={handleHoursChange}
             min="0"
             className="w-16 h-10 text-center bg-white border border-slate-300 rounded-md font-mono text-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -73,6 +73,8 @@ const AllocationTaskCard: React.FC<AllocationTaskCardProps> = ({
   manualSeconds,
   onAllocationChange,
 }) => {
+  const [isNoteExpanded, setIsNoteExpanded] = useState(false);
+  const [note, setNote] = useState('');
   const totalTaskSeconds = trackedSeconds + manualSeconds;
 
   const handleTimeChange = (type: 'tracked' | 'manual', newHours: number, newMinutes: number) => {
@@ -107,6 +109,30 @@ const AllocationTaskCard: React.FC<AllocationTaskCardProps> = ({
             onTimeChange={(h, m) => handleTimeChange('manual', h, m)} 
         />
       </div>
+
+      {manualSeconds > 0 && (
+          <>
+            <hr className="border-slate-200" />
+            <div className="flex flex-col items-start">
+                <button
+                    onClick={() => setIsNoteExpanded(!isNoteExpanded)}
+                    className="flex items-center space-x-1.5 text-sm font-medium text-blue-600 hover:text-blue-800"
+                >
+                    <ChatBubbleIcon className="w-4 h-4" />
+                    <span>+ Add Note</span>
+                    <ChevronDownIcon className={`w-4 h-4 transition-transform duration-200 ${isNoteExpanded ? 'rotate-180' : ''}`} />
+                </button>
+                <div className={`w-full overflow-hidden transition-all duration-300 ease-in-out ${isNoteExpanded ? 'max-h-40 mt-2' : 'max-h-0'}`}>
+                    <textarea
+                        value={note}
+                        onChange={(e) => setNote(e.target.value)}
+                        placeholder="Add reason for untracked time..."
+                        className="w-full h-24 p-2 text-sm border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                    />
+                </div>
+            </div>
+          </>
+      )}
     </div>
   );
 };

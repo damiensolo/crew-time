@@ -4,6 +4,7 @@ import AllocationTaskCard from '../components/AllocationTaskCard';
 import { formatTime } from '../hooks/useTimer';
 import { useDragToScroll } from '../hooks/useDragToScroll';
 import { useRef } from 'react';
+import { ChevronLeftIcon } from '../components/icons';
 
 interface TimeAllocationScreenProps {
   totalShiftSeconds: number;
@@ -48,15 +49,22 @@ const TimeAllocationScreen: React.FC<TimeAllocationScreenProps> = ({
 
   return (
     <div className="flex flex-col h-full bg-slate-100">
-      <header className="bg-slate-800 text-slate-100 p-4 flex items-center justify-center relative h-[60px] flex-shrink-0">
-        <h1 className="text-lg font-bold">Shift Details</h1>
-        <button onClick={onCancel} className="absolute right-4 text-sm font-semibold">Cancel</button>
+      <header className="bg-slate-800 text-slate-100 px-4 flex items-center justify-between h-[60px] flex-shrink-0">
+        <div className="flex-1 flex justify-start">
+            <button onClick={onCancel} className="p-1 -ml-2 text-slate-100 flex items-center" aria-label="Go back">
+              <ChevronLeftIcon className="w-6 h-6" />
+            </button>
+        </div>
+        <div className="flex-1 flex justify-center">
+            <h1 className="text-lg font-bold">Shift Details</h1>
+        </div>
+        <div className="flex-1 flex justify-end"></div> {/* Spacer */}
       </header>
 
       <main className="flex-grow flex flex-col p-4 space-y-4 overflow-hidden">
         <div className="bg-white rounded-xl shadow p-4 grid grid-cols-3 divide-x divide-slate-200 text-center">
             <div>
-                <p className="text-xs font-bold text-slate-500 tracking-wider uppercase">Total Shift</p>
+                <p className="text-xs font-bold text-slate-500 tracking-wider uppercase">Tracked</p>
                 <p className="text-2xl font-semibold text-slate-800 tracking-tight mt-1">{formatTime(totalShiftSeconds)}</p>
             </div>
             <div>

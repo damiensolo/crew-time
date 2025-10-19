@@ -3,6 +3,7 @@ import { TASKS } from '../../constants';
 import AllocationTaskCard from '../components/AllocationTaskCard';
 import { formatTime } from '../../hooks/useTimer';
 import { useDragToScroll } from '../../hooks/useDragToScroll';
+import { ChevronLeftIcon } from '../../components/icons';
 
 interface Allocation {
   tracked: number;
@@ -10,14 +11,15 @@ interface Allocation {
 }
 
 interface TimeAllocationScreenProps {
-  totalShiftSeconds: number;
-  initialAllocations: Record<number, number>; // This is the auto-tracked time
+  totalShiftSeconds: number; 
+  initialAllocations: Record<number, number>; 
   onConfirm: () => void;
   onCancel: () => void;
 }
 
+const TOTAL_SHIFT_GOAL_SECONDS = 8 * 60 * 60; // 8 hours - The source of truth for the shift
+
 const TimeAllocationScreen: React.FC<TimeAllocationScreenProps> = ({
-  totalShiftSeconds,
   initialAllocations,
   onConfirm,
   onCancel
@@ -25,71 +27,151 @@ const TimeAllocationScreen: React.FC<TimeAllocationScreenProps> = ({
   const [allocations, setAllocations] = useState<Record<number, Allocation>>(() => {
     return TASKS.reduce((acc, task) => {
       const trackedSeconds = initialAllocations[task.id] || 0;
-      // Round to the nearest minute to align with the rounded total shift time
       const trackedMinutes = Math.round(trackedSeconds / 60);
       acc[task.id] = {
-        tracked: trackedMinutes * 60, // Store as seconds
+        tracked: trackedMinutes * 60,
         manual: 0,
       };
       return acc;
     }, {} as Record<number, Allocation>);
   });
-
+  
+  const [warning, setWarning] = useState<string | null>(null);
+  const [isConfirming, setIsConfirming] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   useDragToScroll(scrollRef);
 
-  const totalAllocatedSeconds = useMemo(() => {
-    return Object.values(allocations).reduce((sum: number, alloc: Allocation) => {
-      return sum + (alloc.tracked || 0) + (alloc.manual || 0);
-    }, 0);
+  const { totalTrackedSeconds, totalUntrackedSeconds } = useMemo(() => {
+    let tracked = 0;
+    let untracked = 0;
+    for (const alloc of Object.values(allocations) as Allocation[]) {
+        tracked += (alloc.tracked || 0);
+        untracked += (alloc.manual || 0);
+    }
+    return { totalTrackedSeconds: tracked, totalUntrackedSeconds: untracked };
   }, [allocations]);
 
-  const remainingSeconds = totalShiftSeconds - totalAllocatedSeconds;
-  const isSubmissionDisabled = remainingSeconds !== 0;
+  const totalAllocatedTime = totalTrackedSeconds + totalUntrackedSeconds;
+  const remainingSeconds = TOTAL_SHIFT_GOAL_SECONDS - totalAllocatedTime;
 
-  const handleAllocationChange = (taskId: number, type: 'tracked' | 'manual', seconds: number) => {
-    setAllocations(prev => ({
-      ...prev,
-      [taskId]: {
-        ...prev[taskId],
-        [type]: seconds,
-      },
-    }));
+  const handleAllocationChange = (taskId: number, type: 'tracked' | 'manual', newSeconds: number) => {
+    setAllocations(prev => {
+        const currentTaskAllocation = prev[taskId];
+        const otherTasksTotal = (Object.entries(prev) as [string, Allocation][]).reduce((sum, [id, alloc]) => {
+            if (parseInt(id, 10) === taskId) return sum;
+            return sum + (alloc.tracked || 0) + (alloc.manual || 0);
+        }, 0);
+
+        const currentTaskOtherTypeSeconds = type === 'tracked' ? currentTaskAllocation.manual : currentTaskAllocation.tracked;
+        const potentialTotal = otherTasksTotal + currentTaskOtherTypeSeconds + newSeconds;
+        
+        if (potentialTotal > TOTAL_SHIFT_GOAL_SECONDS) {
+            const overflow = potentialTotal - TOTAL_SHIFT_GOAL_SECONDS;
+            const cappedSeconds = Math.max(0, newSeconds - overflow);
+            
+            setWarning(`Total shift hours cannot exceed 8:00.`);
+            setTimeout(() => setWarning(null), 3000);
+
+            return {
+                ...prev,
+                [taskId]: {
+                    ...currentTaskAllocation,
+                    [type]: cappedSeconds
+                }
+            };
+        }
+
+        return {
+            ...prev,
+            [taskId]: {
+                ...currentTaskAllocation,
+                [type]: newSeconds
+            }
+        };
+    });
   };
-
-  const getButtonText = () => {
-    if (!isSubmissionDisabled) {
-      return 'Send for approval';
-    }
+  
+  const handleConfirmClick = () => {
     if (remainingSeconds > 0) {
-      return `Allocate remaining ${formatTime(remainingSeconds)}`;
+      setIsConfirming(true);
+    } else {
+      onConfirm();
     }
-    // remainingSeconds is negative (overallocated)
-    return `Overallocated by ${formatTime(Math.abs(remainingSeconds))}`;
   };
+  
+  const handleProceedWithUnderAllocation = () => {
+    onConfirm();
+    setIsConfirming(false);
+  };
+
+  const handleCancelConfirmation = () => {
+    setIsConfirming(false);
+  };
+
+  const getButtonClasses = () => {
+      if (remainingSeconds > 0) {
+          return 'bg-orange-500 hover:bg-orange-600'; // Warning state
+      }
+      return 'bg-green-600 hover:bg-green-700'; // Success state
+  };
+
 
   return (
-    <div className="flex flex-col h-full bg-slate-100">
-      <header className="bg-slate-800 text-slate-100 p-4 flex items-center justify-center relative h-[60px] flex-shrink-0">
-        <h1 className="text-lg font-bold">Shift Details</h1>
-        <button onClick={onCancel} className="absolute right-4 text-sm font-semibold">Cancel</button>
+    <div className="flex flex-col h-full bg-slate-100 relative">
+      <header className="bg-slate-800 text-slate-100 px-4 flex items-center justify-between h-[60px] flex-shrink-0 z-20">
+        <div className="flex-1 flex justify-start">
+            <button onClick={onCancel} className="p-1 -ml-2 text-slate-100 flex items-center" aria-label="Go back">
+              <ChevronLeftIcon className="w-6 h-6" />
+            </button>
+        </div>
+        <div className="flex-1 flex justify-center">
+            <h1 className="text-lg font-bold">Shift Details</h1>
+        </div>
+        <div className="flex-1 flex justify-end"></div> {/* Spacer */}
       </header>
 
+      {warning && (
+        <div className="absolute top-[70px] left-1/2 -translate-x-1/2 w-11/12 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-md shadow-lg z-10 animate-fadeIn" role="alert">
+          <p className="font-bold">{warning}</p>
+        </div>
+      )}
+
       <main className="flex-grow flex flex-col p-4 space-y-4 overflow-hidden">
-        <div className="bg-white rounded-xl shadow p-4 grid grid-cols-3 divide-x divide-slate-200 text-center">
-            <div>
-                <p className="text-xs font-bold text-slate-500 tracking-wider uppercase">Total Shift</p>
-                <p className="text-2xl font-semibold text-slate-800 tracking-tight mt-1">{formatTime(totalShiftSeconds)}</p>
+        <div className="bg-white rounded-xl shadow p-4 flex flex-col space-y-3 flex-shrink-0">
+            <div className="flex justify-between items-center">
+                <div>
+                    <p className="text-xs font-bold text-slate-500 tracking-wider uppercase">TOTAL SHIFT</p>
+                    <div className="flex items-baseline space-x-1 mt-1">
+                        <p className={`text-2xl font-semibold tracking-tight ${totalAllocatedTime === TOTAL_SHIFT_GOAL_SECONDS && TOTAL_SHIFT_GOAL_SECONDS > 0 ? 'text-green-600' : 'text-slate-800'}`}>
+                            {formatTime(totalAllocatedTime)}
+                        </p>
+                        <p className="text-lg font-semibold text-slate-500 tracking-tight">
+                           / {formatTime(TOTAL_SHIFT_GOAL_SECONDS)} hrs
+                        </p>
+                    </div>
+                </div>
+                <div className="text-right">
+                    <p className="text-sm font-medium text-slate-500">8:00am-4:00pm</p>
+                </div>
             </div>
-            <div>
-                <p className="text-xs font-bold text-slate-500 tracking-wider uppercase">Allocated</p>
-                <p className="text-2xl font-semibold text-slate-800 tracking-tight mt-1">{formatTime(totalAllocatedSeconds)}</p>
-            </div>
-            <div>
-                <p className="text-xs font-bold text-slate-500 tracking-wider uppercase">Remaining</p>
-                <p className={`text-2xl font-semibold tracking-tight mt-1 ${remainingSeconds === 0 ? 'text-green-600' : 'text-red-500'}`}>
-                    {formatTime(Math.max(0, remainingSeconds))}
-                </p>
+
+            <hr className="border-slate-200/60" />
+            
+            <div className="grid grid-cols-3 divide-x divide-slate-200/60 text-center">
+                <div>
+                    <p className="text-xs font-bold text-slate-500 tracking-wider uppercase">TRACKED</p>
+                    <p className="text-xl font-semibold text-slate-800 tracking-tight mt-1">{formatTime(totalTrackedSeconds)}</p>
+                </div>
+                <div>
+                    <p className="text-xs font-bold text-slate-500 tracking-wider uppercase">UNTRACKED</p>
+                    <p className="text-xl font-semibold text-slate-800 tracking-tight mt-1">{formatTime(totalUntrackedSeconds)}</p>
+                </div>
+                <div>
+                    <p className="text-xs font-bold text-slate-500 tracking-wider uppercase">REMAINING</p>
+                    <p className={`text-xl font-semibold tracking-tight mt-1 ${remainingSeconds === 0 ? 'text-green-600' : 'text-slate-800'}`}>
+                        {formatTime(Math.max(0, remainingSeconds))}
+                    </p>
+                </div>
             </div>
         </div>
         
@@ -110,17 +192,38 @@ const TimeAllocationScreen: React.FC<TimeAllocationScreenProps> = ({
 
       <footer className="p-4 bg-white/75 backdrop-blur-xl border-t border-slate-200 flex-shrink-0">
         <button
-          onClick={onConfirm}
-          disabled={isSubmissionDisabled}
-          className={`w-full py-4 text-white font-bold rounded-lg transition-colors text-lg ${
-            isSubmissionDisabled
-              ? 'bg-slate-400 cursor-not-allowed'
-              : 'bg-green-600 hover:bg-green-700'
-          }`}
+          onClick={handleConfirmClick}
+          className={`w-full py-4 text-white font-bold rounded-xl transition-all duration-200 shadow-[0_4px_14px_0_rgb(0,0,0,0.1)] hover:shadow-[0_6px_20px_0_rgb(0,0,0,0.2)] text-lg ${getButtonClasses()}`}
         >
-          {getButtonText()}
+          Send for approval
         </button>
       </footer>
+
+      {isConfirming && (
+        <div className="absolute inset-0 bg-black/40 z-30 flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-sm text-center space-y-4">
+            <h2 className="text-lg font-bold text-slate-800">Confirm Submission</h2>
+            <p className="text-sm text-slate-600">
+              Your allocated time ({formatTime(totalAllocatedTime)}) is less than your total shift time ({formatTime(TOTAL_SHIFT_GOAL_SECONDS)}).
+            </p>
+            <p className="text-sm text-slate-600 font-medium">Are you sure you want to submit?</p>
+            <div className="flex justify-center space-x-3 !mt-6">
+              <button
+                onClick={handleCancelConfirmation}
+                className="px-6 py-2 rounded-lg bg-slate-200 text-slate-700 font-semibold hover:bg-slate-300 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleProceedWithUnderAllocation}
+                className="px-6 py-2 rounded-lg bg-orange-500 text-white font-semibold hover:bg-orange-600 transition-colors"
+              >
+                Proceed Anyway
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

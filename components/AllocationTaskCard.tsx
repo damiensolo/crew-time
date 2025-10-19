@@ -50,7 +50,7 @@ const AllocationTaskCard: React.FC<AllocationTaskCardProps> = ({
         <div className="relative">
           <input
             type="number"
-            value={hours.toString().padStart(2, '0')}
+            value={hours.toString()}
             onChange={handleHoursChange}
             min="0"
             className="w-16 h-10 text-center bg-white border border-slate-300 rounded-md font-mono text-lg focus:outline-none focus:ring-2 focus:ring-orange-500"

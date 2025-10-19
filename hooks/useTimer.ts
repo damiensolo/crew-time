@@ -8,10 +8,10 @@ export const formatTime = (totalSeconds: number, options?: { showSeconds?: boole
 
   if (options?.showSeconds) {
     const seconds = Math.floor(totalSeconds % 60);
-    return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+    return `${hours.toString()}:${pad(minutes)}:${pad(seconds)}`;
   }
 
-  return `${pad(hours)}:${pad(minutes)}`;
+  return `${hours.toString()}:${pad(minutes)}`;
 };
 
 export const useTimer = (

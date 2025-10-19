@@ -14,6 +14,8 @@ interface TaskTimerScreenProps {
   onShiftEnd: (data: { totalSeconds: number; finalTaskTimes: Record<number, number> }) => void;
 }
 
+const SHIFT_DURATION_SECONDS = 8 * 60 * 60; // 8 hours
+
 const TaskTimerScreen: React.FC<TaskTimerScreenProps> = ({ project, isGeofenceOverridden, timeMultiplier, simulatedDistance, onShiftEnd }) => {
   const [isClockedIn, setIsClockedIn] = useState<boolean>(false);
   const [clockInTime, setClockInTime] = useState<Date | null>(null);
@@ -76,9 +78,12 @@ const TaskTimerScreen: React.FC<TaskTimerScreenProps> = ({ project, isGeofenceOv
           finalTaskTimes[activeTask.id] += Math.round(elapsed / 1000);
         }
 
-        const totalShiftSeconds = clockInTime
+        let totalShiftSeconds = clockInTime
           ? Math.floor(((new Date().getTime() - clockInTime.getTime()) / 1000) * timeMultiplier)
           : 0;
+        
+        // Cap the total time at the maximum shift duration
+        totalShiftSeconds = Math.min(totalShiftSeconds, SHIFT_DURATION_SECONDS);
 
         // Round to the nearest minute for allocation.
         const totalMinutes = Math.round(totalShiftSeconds / 60);
@@ -101,6 +106,23 @@ const TaskTimerScreen: React.FC<TaskTimerScreenProps> = ({ project, isGeofenceOv
   }, [effectiveIsInside, activeTask, taskTimers, timeMultiplier, onShiftEnd, clockInTime]);
 
   useEffect(() => {
+    if (!isClockedIn || !clockInTime) {
+      return;
+    }
+
+    const checkTime = () => {
+      const elapsedSeconds = ((new Date().getTime() - clockInTime.getTime()) / 1000) * timeMultiplier;
+      if (elapsedSeconds >= SHIFT_DURATION_SECONDS) {
+        handleClockToggle();
+      }
+    };
+    
+    const intervalId = setInterval(checkTime, 1000);
+
+    return () => clearInterval(intervalId);
+  }, [isClockedIn, clockInTime, timeMultiplier, handleClockToggle]);
+
+  useEffect(() => {
     const latitudeOffset = simulatedDistance / 111100;
     setSimulatedLocation({
       latitude: TARGET_LOCATION.latitude + latitudeOffset,
@@ -110,25 +132,24 @@ const TaskTimerScreen: React.FC<TaskTimerScreenProps> = ({ project, isGeofenceOv
 
   return (
     <div className="flex flex-col h-full">
-      <main ref={scrollRef} className="flex-grow px-4 pt-3 pb-4 space-y-6 overflow-y-auto no-scrollbar">
-          <ControlCenter
-            locationState={locationState}
-            radius={GEOFENCE_RADIUS_METERS}
-            isGeofenceOverridden={isGeofenceOverridden}
-            isClockedIn={isClockedIn}
-            clockInTime={clockInTime}
-            timeMultiplier={timeMultiplier}
-            onClockToggle={handleClockToggle}
-            canClockIn={effectiveIsInside}
-          />
-
+        <div className="p-4 bg-slate-100 sticky top-0 z-10">
+            <ControlCenter
+                project={project}
+                isClockedIn={isClockedIn}
+                clockInTime={clockInTime}
+                timeMultiplier={timeMultiplier}
+                onClockToggle={handleClockToggle}
+                canClockIn={effectiveIsInside}
+            />
+        </div>
+      <main ref={scrollRef} className="flex-grow px-4 pb-4 space-y-6 overflow-y-auto no-scrollbar">
           {showGeofenceWarning && (
               <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-md animate-fadeIn" role="alert">
                   <p>You must be inside the job site to clock in.</p>
               </div>
           )}
         
-        <h2 className="text-slate-800 font-bold text-xl pt-2">Today's tasks</h2>
+        <h2 className="text-slate-800 font-bold text-xl">Today's tasks</h2>
         <TaskList 
           isClockedIn={isClockedIn}
           activeTaskId={activeTask?.id || null}
