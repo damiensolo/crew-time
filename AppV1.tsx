@@ -39,10 +39,10 @@ const AppV1: React.FC<AppV1Props> = ({ isGeofenceOverridden, timeMultiplier, sim
   return (
     <div className="bg-slate-100 h-full flex flex-col font-sans">
       <Header 
-        title={selectedProject ? selectedProject.name : 'Projects'}
-        showBackButton={!!selectedProject}
-        onBack={handleGoBack}
-        showMoreOptionsButton={!!selectedProject}
+        title={shiftDataForAllocation ? 'Shift Details' : (selectedProject ? selectedProject.name : 'Projects')}
+        showBackButton={!!selectedProject || !!shiftDataForAllocation}
+        onBack={shiftDataForAllocation ? handleAllocationComplete : handleGoBack}
+        showMoreOptionsButton={!!selectedProject && !shiftDataForAllocation}
         onMoreOptions={handleMoreOptions}
         version="v1"
       />
@@ -67,16 +67,16 @@ const AppV1: React.FC<AppV1Props> = ({ isGeofenceOverridden, timeMultiplier, sim
             />
           )}
         </div>
-      </div>
-
-      <div className={`absolute top-0 left-0 w-full h-full bg-white z-50 transition-transform duration-300 ease-in-out ${shiftDataForAllocation ? 'translate-y-0' : 'translate-y-full'}`}>
-        {shiftDataForAllocation && (
-          <TimeAllocationScreen
-            totalShiftSeconds={shiftDataForAllocation.totalSeconds}
-            onConfirm={handleAllocationComplete}
-            onCancel={handleAllocationComplete}
-          />
-        )}
+        
+        <div className={`absolute inset-0 bg-white z-30 transition-transform duration-300 ease-in-out ${shiftDataForAllocation ? 'translate-y-0' : 'translate-y-full'}`}>
+          {shiftDataForAllocation && (
+            <TimeAllocationScreen
+              totalShiftSeconds={shiftDataForAllocation.totalSeconds}
+              onConfirm={handleAllocationComplete}
+              onCancel={handleAllocationComplete}
+            />
+          )}
+        </div>
       </div>
     </div>
   );

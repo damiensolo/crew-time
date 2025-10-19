@@ -37,7 +37,6 @@ const TaskTimerScreen: React.FC<TaskTimerScreenProps> = ({ project, isGeofenceOv
   }, [activeTask, isClockedIn]);
   
   const locationState: GeolocationState = useGeolocation(TARGET_LOCATION, GEOFENCE_RADIUS_METERS, simulatedLocation);
-  const [showGeofenceWarning, setShowGeofenceWarning] = useState<boolean>(false);
   const effectiveIsInside = locationState.isInside || isGeofenceOverridden;
 
   const handleTaskTimerToggle = useCallback((taskId: number) => {
@@ -64,8 +63,6 @@ const TaskTimerScreen: React.FC<TaskTimerScreenProps> = ({ project, isGeofenceOv
 
   const handleClockToggle = useCallback(() => {
     if (!effectiveIsInside && !isClockedIn) {
-        setShowGeofenceWarning(true);
-        setTimeout(() => setShowGeofenceWarning(false), 3000);
         return;
     }
 
@@ -132,7 +129,12 @@ const TaskTimerScreen: React.FC<TaskTimerScreenProps> = ({ project, isGeofenceOv
 
   return (
     <div className="flex flex-col h-full">
-        <div className="p-4 bg-slate-100 sticky top-0 z-10">
+        <div className="p-4 bg-slate-100 sticky top-0 z-10 space-y-4">
+            {!isClockedIn && !effectiveIsInside && locationState.isInside !== null && (
+              <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-md animate-fadeIn" role="alert">
+                  <p>You must be inside the job site to clock in.</p>
+              </div>
+            )}
             <ControlCenter
                 project={project}
                 isClockedIn={isClockedIn}
@@ -143,12 +145,6 @@ const TaskTimerScreen: React.FC<TaskTimerScreenProps> = ({ project, isGeofenceOv
             />
         </div>
       <main ref={scrollRef} className="flex-grow px-4 pb-4 space-y-6 overflow-y-auto no-scrollbar">
-          {showGeofenceWarning && (
-              <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-md animate-fadeIn" role="alert">
-                  <p>You must be inside the job site to clock in.</p>
-              </div>
-          )}
-        
         <h2 className="text-slate-800 font-bold text-xl">Today's tasks</h2>
         <TaskList 
           isClockedIn={isClockedIn}

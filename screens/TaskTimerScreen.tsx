@@ -34,14 +34,11 @@ const TaskTimerScreen: React.FC<TaskTimerScreenProps> = ({ project, isGeofenceOv
   }, [simulatedDistance]);
 
   const locationState: GeolocationState = useGeolocation(TARGET_LOCATION, GEOFENCE_RADIUS_METERS, simulatedLocation);
-  const [showGeofenceWarning, setShowGeofenceWarning] = useState<boolean>(false);
 
   const effectiveIsInside = locationState.isInside || isGeofenceOverridden;
 
   const handleClockToggle = useCallback(() => {
     if (!effectiveIsInside && !isClockedIn) {
-        setShowGeofenceWarning(true);
-        setTimeout(() => setShowGeofenceWarning(false), 5000);
         return;
     }
 
@@ -79,6 +76,12 @@ const TaskTimerScreen: React.FC<TaskTimerScreenProps> = ({ project, isGeofenceOv
     <div className="flex flex-col h-full">
       <main ref={scrollRef} className="flex-grow px-4 pt-3 pb-4 space-y-6 overflow-y-auto no-scrollbar">
           
+          {!isClockedIn && !effectiveIsInside && locationState.isInside !== null && (
+              <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-md animate-fadeIn" role="alert">
+                  <p>You must be inside the job site to clock in.</p>
+              </div>
+          )}
+
           <ControlCenter
             targetLocation={TARGET_LOCATION}
             radius={GEOFENCE_RADIUS_METERS}
@@ -93,13 +96,6 @@ const TaskTimerScreen: React.FC<TaskTimerScreenProps> = ({ project, isGeofenceOv
             timeMultiplier={timeMultiplier}
             canClockIn={effectiveIsInside}
           />
-
-          {showGeofenceWarning && (
-              <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-md" role="alert">
-                  <p className="font-bold">Location Warning</p>
-                  <p>You must be inside the job site to clock in.</p>
-              </div>
-          )}
         
         <h2 className="text-slate-800 font-bold text-xl pt-2">Today's tasks</h2>
         <TaskList />

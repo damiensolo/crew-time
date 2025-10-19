@@ -118,20 +118,8 @@ const TimeAllocationScreen: React.FC<TimeAllocationScreenProps> = ({
 
   return (
     <div className="flex flex-col h-full bg-slate-100 relative">
-      <header className="bg-slate-800 text-slate-100 px-4 flex items-center justify-between h-[60px] flex-shrink-0 z-20">
-        <div className="flex-1 flex justify-start">
-            <button onClick={onCancel} className="p-1 -ml-2 text-slate-100 flex items-center" aria-label="Go back">
-              <ChevronLeftIcon className="w-6 h-6" />
-            </button>
-        </div>
-        <div className="flex-1 flex justify-center">
-            <h1 className="text-lg font-bold">Shift Details</h1>
-        </div>
-        <div className="flex-1 flex justify-end"></div> {/* Spacer */}
-      </header>
-
       {warning && (
-        <div className="absolute top-[70px] left-1/2 -translate-x-1/2 w-11/12 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-md shadow-lg z-10 animate-fadeIn" role="alert">
+        <div className="absolute top-[10px] left-1/2 -translate-x-1/2 w-11/12 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-md shadow-lg z-10 animate-fadeIn" role="alert">
           <p className="font-bold">{warning}</p>
         </div>
       )}

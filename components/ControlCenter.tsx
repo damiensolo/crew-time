@@ -38,20 +38,6 @@ const ControlCenter: React.FC<ControlCenterProps> = ({
   
   const mapBackground = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0iI2YwZjJmNSIvPjxwYXRoIGQ9Ik0gNTAsMCBWIDIwMCBNIDAsODAgSCAyMDAgTSAxNTAsMCBWIDkwIEwgMjAwLCA3MCIgc3Ryb2tlPSIjZDlkZGUyIiBzdHJva2Utd2lkdGg9IjE1Ii8+PHBhdGggZD0iTSAwLDE2MCBIIDE0MCBMIDE2MCwgMjAwIiBzdHJva2U9IiNkOWRkZTIiIHN0cm9rZS13aWR0aD0iMTIiLz48cmVjdCB4PSI3MCIgeT0iMTAwIiB3aWR0aD0iNjAiIGhlaWdodD0iNTAiIGZpbGw9IiNlNmYxZTYiIHJ4PSI1Ii8+PHJlY3QgeD0iMTYwIiB5PSIxMCIgd2lkdGg9IjMwIiBoZWlnaHQ9IjQwIiBmaWxsPSIjZThlOGU4Ii8+PC9zdmc+';
 
-  const getStatusText = () => {
-    if (isGeofenceOverridden) return 'Job Site Location Active (Overridden)';
-    if (error) return error;
-    if (isInside === null && !currentLocation) return 'Searching for location...';
-    if (isInside === null && currentLocation) return 'Calculating distance...';
-    return isInside ? 'You are at the job site.' : 'You are outside the job site.';
-  };
-
-  const getStatusColor = () => {
-    if (isGeofenceOverridden || isInside) return 'text-green-600';
-    if (error || isInside === false) return 'text-red-600';
-    return 'text-slate-700';
-  };
-  
   const MAP_RADIUS_PX = 72; 
   const MAX_DISPLAY_RADIUS_PX = MAP_RADIUS_PX * 1.5;
 
@@ -174,17 +160,6 @@ const ControlCenter: React.FC<ControlCenterProps> = ({
                         )}
                     </div>
                 </div>
-            </div>
-            <div 
-                className="absolute top-2 left-1/2 -translate-x-1/2 w-auto whitespace-nowrap px-6 py-2 bg-white/90 backdrop-blur-lg z-20 text-center rounded-full shadow-lg"
-                aria-live="polite"
-            >
-                <p 
-                    key={getStatusText()} 
-                    className={`font-bold text-base ${getStatusColor()} animate-fadeIn`}
-                >
-                  {getStatusText()}
-                </p>
             </div>
         </div>
       
