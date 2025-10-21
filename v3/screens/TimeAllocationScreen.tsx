@@ -5,7 +5,6 @@ import { formatTime } from '../../hooks/useTimer';
 import { useDragToScroll } from '../../hooks/useDragToScroll';
 
 interface TimeAllocationScreenProps {
-  totalShiftSeconds: number; // This prop might be deprecated in favor of the constant, but kept for consistency
   initialAllocations: Record<number, number>; 
   onConfirm: () => void;
   onCancel: () => void;
@@ -17,43 +16,67 @@ const TimeAllocationScreen: React.FC<TimeAllocationScreenProps> = ({
   initialAllocations,
   onConfirm,
 }) => {
-  const [manualAllocations, setManualAllocations] = useState<Record<number, number>>({});
   const [isConfirming, setIsConfirming] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   useDragToScroll(scrollRef);
 
-  const trackedAllocations = useMemo(() => {
+  const originalTrackedAllocations = useMemo(() => {
     return TASKS.reduce((acc, task) => {
       const trackedSeconds = initialAllocations[task.id] || 0;
-      const trackedMinutes = Math.round(trackedSeconds / 60);
-      acc[task.id] = trackedMinutes * 60;
+      acc[task.id] = Math.round(trackedSeconds / 60) * 60;
       return acc;
     }, {} as Record<number, number>);
   }, [initialAllocations]);
 
-  const { totalTrackedSeconds, totalManualSeconds, totalAllocatedTime } = useMemo(() => {
-    const tracked = Object.values(trackedAllocations).reduce((sum, seconds) => sum + seconds, 0);
-    const manual = Object.values(manualAllocations).reduce((sum, seconds) => sum + (seconds || 0), 0);
+  const [allocations, setAllocations] = useState<Record<number, number>>(() => originalTrackedAllocations);
+
+  const { totalAllocatedTime, totalTrackedSeconds, totalUntrackedSeconds } = useMemo(() => {
+    let totalAllocated = 0;
+    let totalTracked = 0;
+    let totalUntracked = 0;
+
+    for (const task of TASKS) {
+        const taskId = task.id;
+        const allocated = allocations[taskId] || 0;
+        const original = originalTrackedAllocations[taskId] || 0;
+        
+        totalAllocated += allocated;
+        totalTracked += Math.min(allocated, original);
+        totalUntracked += Math.max(0, allocated - original);
+    }
+    
     return { 
-      totalTrackedSeconds: tracked,
-      totalManualSeconds: manual,
-      totalAllocatedTime: tracked + manual,
+        totalAllocatedTime: totalAllocated, 
+        totalTrackedSeconds: totalTracked, 
+        totalUntrackedSeconds: totalUntracked 
     };
-  }, [trackedAllocations, manualAllocations]);
+  }, [allocations, originalTrackedAllocations]);
 
   const remainingSeconds = TOTAL_SHIFT_GOAL_SECONDS - totalAllocatedTime;
+  
+  const handleAllocationChange = (taskId: number, newSeconds: number) => {
+    setAllocations(prev => {
+        const otherTasksTotal = (Object.entries(prev) as [string, number][]).reduce((sum, [id, secs]) => {
+            if (parseInt(id, 10) === taskId) return sum;
+            return sum + (secs || 0);
+        }, 0);
 
-  const handleAllocationChange = (taskId: number, newManualSeconds: number) => {
-    setManualAllocations(prev => ({
-      ...prev,
-      [taskId]: newManualSeconds,
-    }));
+        let cappedNewSeconds = Math.max(0, newSeconds);
+        if (otherTasksTotal + cappedNewSeconds > TOTAL_SHIFT_GOAL_SECONDS) {
+            cappedNewSeconds = TOTAL_SHIFT_GOAL_SECONDS - otherTasksTotal;
+        }
+
+        return {
+            ...prev,
+            [taskId]: cappedNewSeconds
+        };
+    });
   };
   
   const handleConfirmClick = () => {
     if (remainingSeconds > 0) {
       setIsConfirming(true);
-    } else {
+    } else if (remainingSeconds === 0) {
       onConfirm();
     }
   };
@@ -71,63 +94,71 @@ const TimeAllocationScreen: React.FC<TimeAllocationScreenProps> = ({
       if (remainingSeconds > 0) {
           return 'bg-orange-500 hover:bg-orange-600'; // Warning state
       }
+      if (remainingSeconds < 0) {
+        return 'bg-red-500 cursor-not-allowed'; // Overallocated
+      }
       return 'bg-green-600 hover:bg-green-700'; // Success state
   };
+  
+  const getButtonText = () => {
+    if (remainingSeconds < 0) {
+      return `Over by ${formatTime(Math.abs(remainingSeconds))}`;
+    }
+    if (remainingSeconds > 0 && totalAllocatedTime > 0) {
+        return 'Send for approval';
+    }
+    return 'Send for approval';
+  }
 
   return (
     <div className="flex flex-col h-full bg-slate-100 relative">
       <main className="flex-grow flex flex-col p-4 space-y-4 overflow-hidden">
         <div className="bg-white rounded-xl shadow p-4 flex flex-col space-y-3 flex-shrink-0">
-            <div className="flex justify-between items-center">
-                <div>
-                    <p className="text-xs font-bold text-slate-500 tracking-wider uppercase">TOTAL SHIFT</p>
-                    <div className="flex items-baseline space-x-1 mt-1">
-                        <p className={`text-2xl font-semibold tracking-tight ${totalAllocatedTime === TOTAL_SHIFT_GOAL_SECONDS && TOTAL_SHIFT_GOAL_SECONDS > 0 ? 'text-green-600' : 'text-slate-800'}`}>
-                            {formatTime(totalAllocatedTime)}
-                        </p>
-                        <p className="text-lg font-semibold text-slate-500 tracking-tight">
-                           / {formatTime(TOTAL_SHIFT_GOAL_SECONDS)} hrs
-                        </p>
-                    </div>
+            <div className="text-center">
+                <p className="text-xs font-bold text-slate-500 tracking-wider uppercase">TOTAL SHIFT</p>
+                <div className="flex items-baseline justify-center space-x-1 mt-1">
+                    <p className={`text-2xl font-semibold tracking-tight ${totalAllocatedTime === TOTAL_SHIFT_GOAL_SECONDS && TOTAL_SHIFT_GOAL_SECONDS > 0 ? 'text-green-600' : 'text-slate-800'}`}>
+                        {formatTime(totalAllocatedTime)}
+                    </p>
+                    <p className="text-lg font-semibold text-slate-500 tracking-tight">
+                       / {formatTime(TOTAL_SHIFT_GOAL_SECONDS)} hrs
+                    </p>
                 </div>
-                <div className="text-right">
-                    <p className="text-sm font-medium text-slate-500">8:00am-4:00pm</p>
-                </div>
+                 <p className="text-sm font-medium text-slate-500 mt-1">8:00am-4:00pm</p>
             </div>
 
             <hr className="border-slate-200/60" />
             
-            <div className="grid grid-cols-2 divide-x divide-slate-200/60 text-center">
+            <div className="grid grid-cols-3 divide-x divide-slate-200/60 text-center">
                 <div>
                     <p className="text-xs font-bold text-slate-500 tracking-wider uppercase">TRACKED</p>
                     <p className="text-xl font-semibold text-slate-800 tracking-tight mt-1">{formatTime(totalTrackedSeconds)}</p>
                 </div>
                 <div>
-                    <p className="text-xs font-bold text-slate-500 tracking-wider uppercase">MANUAL</p>
-                    <p className="text-xl font-semibold text-slate-800 tracking-tight mt-1">{formatTime(totalManualSeconds)}</p>
+                    <p className="text-xs font-bold text-slate-500 tracking-wider uppercase">UNTRACKED</p>
+                    <p className="text-xl font-semibold text-slate-800 tracking-tight mt-1">{formatTime(totalUntrackedSeconds)}</p>
+                </div>
+                 <div>
+                    <p className="text-xs font-bold text-slate-500 tracking-wider uppercase">REMAINING</p>
+                    <p className={`text-xl font-semibold tracking-tight mt-1 ${remainingSeconds === 0 ? 'text-green-600' : 'text-slate-800'}`}>
+                        {formatTime(Math.max(0, remainingSeconds))}
+                    </p>
                 </div>
             </div>
         </div>
         
         <div ref={scrollRef} className="flex-grow bg-white rounded-xl shadow p-2 overflow-y-auto no-scrollbar">
             <div className="space-y-3">
-                {TASKS.map(task => {
-                  const currentManual = manualAllocations[task.id] || 0;
-                  const otherManualTotal = totalManualSeconds - currentManual;
-                  const availableManualSeconds = TOTAL_SHIFT_GOAL_SECONDS - totalTrackedSeconds - otherManualTotal;
-                  
-                  return (
+                {TASKS.map(task => (
                     <AllocationTaskCard
                       key={task.id}
                       task={task}
-                      trackedSeconds={trackedAllocations[task.id] || 0}
-                      manualSeconds={currentManual}
+                      originalTrackedSeconds={originalTrackedAllocations[task.id] || 0}
+                      allocatedSeconds={allocations[task.id] || 0}
                       onAllocationChange={handleAllocationChange}
-                      maxManualSeconds={availableManualSeconds}
                       totalShiftSeconds={TOTAL_SHIFT_GOAL_SECONDS}
                     />
-                  );
-                })}
+                ))}
             </div>
         </div>
       </main>
@@ -135,9 +166,10 @@ const TimeAllocationScreen: React.FC<TimeAllocationScreenProps> = ({
       <footer className="p-4 bg-white/75 backdrop-blur-xl border-t border-slate-200 flex-shrink-0">
         <button
           onClick={handleConfirmClick}
+          disabled={remainingSeconds < 0}
           className={`w-full py-4 text-white font-bold rounded-xl transition-all duration-200 shadow-[0_4px_14px_0_rgb(0,0,0,0.1)] hover:shadow-[0_6px_20px_0_rgb(0,0,0,0.2)] text-lg ${getButtonClasses()}`}
         >
-          Send for approval
+          {getButtonText()}
         </button>
       </footer>
 

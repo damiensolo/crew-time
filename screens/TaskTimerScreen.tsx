@@ -12,9 +12,12 @@ interface TaskTimerScreenProps {
   timeMultiplier: number;
   simulatedDistance: number;
   onShiftEnd: (totalSeconds: number) => void;
+  showMap: boolean;
 }
 
-const TaskTimerScreen: React.FC<TaskTimerScreenProps> = ({ project, isGeofenceOverridden, timeMultiplier, simulatedDistance, onShiftEnd }) => {
+const SHIFT_DURATION_SECONDS = 8 * 60 * 60; // 8 hours
+
+const TaskTimerScreen: React.FC<TaskTimerScreenProps> = ({ project, isGeofenceOverridden, timeMultiplier, simulatedDistance, onShiftEnd, showMap }) => {
   const [isClockedIn, setIsClockedIn] = useState<boolean>(false);
   const [clockInTime, setClockInTime] = useState<Date | null>(null);
   const [simulatedLocation, setSimulatedLocation] = useState<Location | null>(null);
@@ -49,7 +52,11 @@ const TaskTimerScreen: React.FC<TaskTimerScreenProps> = ({ project, isGeofenceOv
         // Clocking OUT
         if (clockInTime) {
           const durationSeconds = Math.floor((new Date().getTime() - clockInTime.getTime()) / 1000);
-          const simulatedDuration = durationSeconds * timeMultiplier;
+          let simulatedDuration = durationSeconds * timeMultiplier;
+          
+          // Cap the total time at the maximum shift duration
+          simulatedDuration = Math.min(simulatedDuration, SHIFT_DURATION_SECONDS);
+
           // Round to the nearest minute to ensure allocation logic matches display.
           const totalMinutes = Math.round(simulatedDuration / 60);
           onShiftEnd(totalMinutes * 60);
@@ -69,6 +76,24 @@ const TaskTimerScreen: React.FC<TaskTimerScreenProps> = ({ project, isGeofenceOv
         return () => clearTimeout(timer);
     }
   }, [isClockedIn, effectiveIsInside, handleClockToggle]);
+
+  useEffect(() => {
+    // Automatically clock out after 8-hour shift is complete
+    if (!isClockedIn || !clockInTime) {
+      return;
+    }
+
+    const checkTime = () => {
+      const elapsedSeconds = ((new Date().getTime() - clockInTime.getTime()) / 1000) * timeMultiplier;
+      if (elapsedSeconds >= SHIFT_DURATION_SECONDS) {
+        handleClockToggle();
+      }
+    };
+    
+    const intervalId = setInterval(checkTime, 1000);
+
+    return () => clearInterval(intervalId);
+  }, [isClockedIn, clockInTime, timeMultiplier, handleClockToggle]);
 
   return (
     <div className="flex flex-col h-full">
@@ -100,6 +125,7 @@ const TaskTimerScreen: React.FC<TaskTimerScreenProps> = ({ project, isGeofenceOv
             onClockToggle={handleClockToggle}
             timeMultiplier={timeMultiplier}
             canClockIn={effectiveIsInside}
+            showMap={showMap}
           />
         
         <h2 className="text-slate-800 font-bold text-xl pt-2">Today's tasks</h2>

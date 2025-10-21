@@ -1,6 +1,6 @@
 import React from 'react';
 
-type AppVersion = 'v1' | 'v2' | 'v3';
+type AppVersion = 'v1' | 'v2' | 'v3' | 'v4';
 
 interface TestingToolsPanelProps {
   isGeofenceOverridden: boolean;
@@ -11,6 +11,8 @@ interface TestingToolsPanelProps {
   onTimeMultiplierChange: (speed: number) => void;
   currentVersion: AppVersion;
   onVersionChange: (version: AppVersion) => void;
+  showMap?: boolean;
+  onShowMapToggle?: () => void;
 }
 
 const TestingToolsPanel: React.FC<TestingToolsPanelProps> = ({
@@ -22,6 +24,8 @@ const TestingToolsPanel: React.FC<TestingToolsPanelProps> = ({
   onTimeMultiplierChange,
   currentVersion,
   onVersionChange,
+  showMap,
+  onShowMapToggle,
 }) => {
   const maxDistance = 1000;
 
@@ -47,24 +51,54 @@ const TestingToolsPanel: React.FC<TestingToolsPanelProps> = ({
          <div className="flex justify-center rounded-lg bg-slate-200 p-1 mt-3">
             <button
                 onClick={() => onVersionChange('v1')}
-                className={`w-1/3 rounded-md py-1 text-sm font-semibold transition-colors ${currentVersion === 'v1' ? 'bg-white text-slate-800 shadow' : 'text-slate-600'}`}
+                className={`w-1/4 rounded-md py-1 text-sm font-semibold transition-colors ${currentVersion === 'v1' ? 'bg-white text-slate-800 shadow' : 'text-slate-600'}`}
             >
                 V1
             </button>
             <button
                 onClick={() => onVersionChange('v2')}
-                className={`w-1/3 rounded-md py-1 text-sm font-semibold transition-colors ${currentVersion === 'v2' ? 'bg-white text-slate-800 shadow' : 'text-slate-600'}`}
+                className={`w-1/4 rounded-md py-1 text-sm font-semibold transition-colors ${currentVersion === 'v2' ? 'bg-white text-slate-800 shadow' : 'text-slate-600'}`}
             >
                 V2
             </button>
              <button
                 onClick={() => onVersionChange('v3')}
-                className={`w-1/3 rounded-md py-1 text-sm font-semibold transition-colors ${currentVersion === 'v3' ? 'bg-white text-slate-800 shadow' : 'text-slate-600'}`}
+                className={`w-1/4 rounded-md py-1 text-sm font-semibold transition-colors ${currentVersion === 'v3' ? 'bg-white text-slate-800 shadow' : 'text-slate-600'}`}
             >
                 V3
             </button>
+            <button
+                onClick={() => onVersionChange('v4')}
+                className={`w-1/4 rounded-md py-1 text-sm font-semibold transition-colors ${currentVersion === 'v4' ? 'bg-white text-slate-800 shadow' : 'text-slate-600'}`}
+            >
+                V4
+            </button>
         </div>
       </div>
+
+      {currentVersion === 'v1' && (
+        <>
+          <hr/>
+          <div>
+              <h4 className="text-sm font-semibold text-slate-700 text-center">Map Visibility</h4>
+              <div className="flex items-center justify-center space-x-2 mt-3">
+                  <label htmlFor="map-toggle" className="text-sm text-gray-600 font-medium">Status: {showMap ? 'Visible' : 'Hidden'}</label>
+                  <button
+                      id="map-toggle"
+                      onClick={onShowMapToggle}
+                      className={`relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 ${showMap ? 'bg-green-500' : 'bg-gray-300'}`}
+                      aria-pressed={showMap}
+                      aria-label="Toggle Map Visibility"
+                  >
+                      <span
+                          aria-hidden="true"
+                          className={`inline-block h-5 w-5 rounded-full bg-white shadow transform ring-0 transition ease-in-out duration-200 ${showMap ? 'translate-x-5' : 'translate-x-0'}`}
+                      />
+                  </button>
+              </div>
+          </div>
+        </>
+      )}
       
       <hr/>
 

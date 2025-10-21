@@ -1,20 +1,22 @@
 import React, { useState, useCallback } from 'react';
-import TaskTimerScreen from './screens/TaskTimerScreen';
-import ProjectListScreen from './screens/ProjectListScreen';
+import TaskTimerScreen from './v4/screens/TaskTimerScreen';
+import ProjectListScreen from './v4/screens/ProjectListScreen';
 import Header from './components/Header';
 import type { Project } from './types';
-import TimeAllocationScreen from './screens/TimeAllocationScreen';
+import TimeAllocationScreen from './v4/screens/TimeAllocationScreen';
 
-interface AppV1Props {
+interface AppV4Props {
   isGeofenceOverridden: boolean;
   timeMultiplier: number;
   simulatedDistance: number;
-  showMap: boolean;
 }
 
-const AppV1: React.FC<AppV1Props> = ({ isGeofenceOverridden, timeMultiplier, simulatedDistance, showMap }) => {
+const AppV4: React.FC<AppV4Props> = ({ isGeofenceOverridden, timeMultiplier, simulatedDistance }) => {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-  const [shiftDataForAllocation, setShiftDataForAllocation] = useState<{ totalSeconds: number } | null>(null);
+  const [shiftDataForAllocation, setShiftDataForAllocation] = useState<{ 
+    totalSeconds: number;
+    initialAllocations: Record<number, number>;
+  } | null>(null);
 
   const handleSelectProject = useCallback((project: Project) => {
     setSelectedProject(project);
@@ -24,8 +26,11 @@ const AppV1: React.FC<AppV1Props> = ({ isGeofenceOverridden, timeMultiplier, sim
     setSelectedProject(null);
   }, []);
 
-  const handleShiftEnd = useCallback((totalSeconds: number) => {
-    setShiftDataForAllocation({ totalSeconds });
+  const handleShiftEnd = useCallback((data: { totalSeconds: number; finalTaskTimes: Record<number, number> }) => {
+    setShiftDataForAllocation({ 
+      totalSeconds: data.totalSeconds, 
+      initialAllocations: data.finalTaskTimes 
+    });
   }, []);
 
   const handleAllocationComplete = useCallback(() => {
@@ -34,7 +39,7 @@ const AppV1: React.FC<AppV1Props> = ({ isGeofenceOverridden, timeMultiplier, sim
 
   const handleMoreOptions = useCallback(() => {
     // Placeholder for more options functionality
-    alert('More options clicked!');
+    alert('More options clicked! (V4)');
   }, []);
 
   return (
@@ -45,7 +50,7 @@ const AppV1: React.FC<AppV1Props> = ({ isGeofenceOverridden, timeMultiplier, sim
         onBack={shiftDataForAllocation ? handleAllocationComplete : handleGoBack}
         showMoreOptionsButton={!!selectedProject && !shiftDataForAllocation}
         onMoreOptions={handleMoreOptions}
-        version="v1"
+        version="v4"
       />
 
       <div className="relative flex-1 overflow-hidden">
@@ -65,15 +70,15 @@ const AppV1: React.FC<AppV1Props> = ({ isGeofenceOverridden, timeMultiplier, sim
               timeMultiplier={timeMultiplier}
               simulatedDistance={simulatedDistance}
               onShiftEnd={handleShiftEnd}
-              showMap={showMap}
             />
           )}
         </div>
-        
+
         <div className={`absolute inset-0 bg-white z-30 transition-transform duration-300 ease-in-out ${shiftDataForAllocation ? 'translate-y-0' : 'translate-y-full'}`}>
           {shiftDataForAllocation && (
             <TimeAllocationScreen
               totalShiftSeconds={shiftDataForAllocation.totalSeconds}
+              initialAllocations={shiftDataForAllocation.initialAllocations}
               onConfirm={handleAllocationComplete}
               onCancel={handleAllocationComplete}
             />
@@ -84,4 +89,4 @@ const AppV1: React.FC<AppV1Props> = ({ isGeofenceOverridden, timeMultiplier, sim
   );
 };
 
-export default AppV1;
+export default AppV4;

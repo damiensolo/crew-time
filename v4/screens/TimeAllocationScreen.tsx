@@ -3,7 +3,6 @@ import { TASKS } from '../../constants';
 import AllocationTaskCard from '../components/AllocationTaskCard';
 import { formatTime } from '../../hooks/useTimer';
 import { useDragToScroll } from '../../hooks/useDragToScroll';
-import { ChevronLeftIcon } from '../../components/icons';
 
 interface Allocation {
   tracked: number;
@@ -11,7 +10,7 @@ interface Allocation {
 }
 
 interface TimeAllocationScreenProps {
-  totalShiftSeconds: number; 
+  totalShiftSeconds: number;
   initialAllocations: Record<number, number>; 
   onConfirm: () => void;
   onCancel: () => void;
@@ -22,72 +21,70 @@ const TOTAL_SHIFT_GOAL_SECONDS = 8 * 60 * 60; // 8 hours - The source of truth f
 const TimeAllocationScreen: React.FC<TimeAllocationScreenProps> = ({
   initialAllocations,
   onConfirm,
-  onCancel
 }) => {
-  const [allocations, setAllocations] = useState<Record<number, Allocation>>(() => {
+  const [isConfirming, setIsConfirming] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  useDragToScroll(scrollRef);
+
+  const originalTrackedAllocations = useMemo(() => {
     return TASKS.reduce((acc, task) => {
       const trackedSeconds = initialAllocations[task.id] || 0;
-      const trackedMinutes = Math.round(trackedSeconds / 60);
+      acc[task.id] = Math.round(trackedSeconds / 60) * 60;
+      return acc;
+    }, {} as Record<number, number>);
+  }, [initialAllocations]);
+
+  const totalTrackedTimeFromShift = useMemo(() => 
+    // FIX: Explicitly type the accumulator and value in the `reduce` callback to resolve a type inference issue.
+    Object.values(originalTrackedAllocations).reduce((sum: number, seconds: number) => sum + seconds, 0),
+    [originalTrackedAllocations]
+  );
+
+  const [allocations, setAllocations] = useState<Record<number, Allocation>>(() => {
+    return TASKS.reduce((acc, task) => {
       acc[task.id] = {
-        tracked: trackedMinutes * 60,
+        tracked: originalTrackedAllocations[task.id] || 0,
         manual: 0,
       };
       return acc;
     }, {} as Record<number, Allocation>);
   });
-  
-  const [warning, setWarning] = useState<string | null>(null);
-  const [isConfirming, setIsConfirming] = useState(false);
-  const scrollRef = useRef<HTMLDivElement>(null);
-  useDragToScroll(scrollRef);
 
-  const { totalTrackedSeconds, totalUntrackedSeconds } = useMemo(() => {
+  const { totalTrackedSeconds, totalManualSeconds, totalAllocatedTime } = useMemo(() => {
     let tracked = 0;
-    let untracked = 0;
+    let manual = 0;
+    // FIX: Cast the result of Object.values to the correct type to help TypeScript's type inference.
     for (const alloc of Object.values(allocations) as Allocation[]) {
-        tracked += (alloc.tracked || 0);
-        untracked += (alloc.manual || 0);
+        tracked += alloc.tracked;
+        manual += alloc.manual;
     }
-    return { totalTrackedSeconds: tracked, totalUntrackedSeconds: untracked };
+    return { totalTrackedSeconds: tracked, totalManualSeconds: manual, totalAllocatedTime: tracked + manual };
   }, [allocations]);
 
-  const totalAllocatedTime = totalTrackedSeconds + totalUntrackedSeconds;
   const remainingSeconds = TOTAL_SHIFT_GOAL_SECONDS - totalAllocatedTime;
-
+  
   const handleAllocationChange = (taskId: number, type: 'tracked' | 'manual', newSeconds: number) => {
     setAllocations(prev => {
-        const currentTaskAllocation = prev[taskId];
-        const otherTasksTotal = (Object.entries(prev) as [string, Allocation][]).reduce((sum, [id, alloc]) => {
-            if (parseInt(id, 10) === taskId) return sum;
-            return sum + (alloc.tracked || 0) + (alloc.manual || 0);
-        }, 0);
+        const updated = { ...prev };
+        const oldVal = updated[taskId][type];
+        let cappedNewSeconds = Math.max(0, newSeconds);
 
-        const currentTaskOtherTypeSeconds = type === 'tracked' ? currentTaskAllocation.manual : currentTaskAllocation.tracked;
-        const potentialTotal = otherTasksTotal + currentTaskOtherTypeSeconds + newSeconds;
+        // Check against total tracked pool
+        if (type === 'tracked') {
+            const currentTotalTracked = totalTrackedSeconds - oldVal;
+            if (currentTotalTracked + cappedNewSeconds > totalTrackedTimeFromShift) {
+                cappedNewSeconds = totalTrackedTimeFromShift - currentTotalTracked;
+            }
+        }
         
-        if (potentialTotal > TOTAL_SHIFT_GOAL_SECONDS) {
-            const overflow = potentialTotal - TOTAL_SHIFT_GOAL_SECONDS;
-            const cappedSeconds = Math.max(0, newSeconds - overflow);
-            
-            setWarning(`Total shift hours cannot exceed 8:00.`);
-            setTimeout(() => setWarning(null), 3000);
-
-            return {
-                ...prev,
-                [taskId]: {
-                    ...currentTaskAllocation,
-                    [type]: cappedSeconds
-                }
-            };
+        // Check against total shift goal
+        const currentTotalAllocated = totalAllocatedTime - oldVal;
+        if (currentTotalAllocated + cappedNewSeconds > TOTAL_SHIFT_GOAL_SECONDS) {
+            cappedNewSeconds = TOTAL_SHIFT_GOAL_SECONDS - currentTotalAllocated;
         }
 
-        return {
-            ...prev,
-            [taskId]: {
-                ...currentTaskAllocation,
-                [type]: newSeconds
-            }
-        };
+        updated[taskId] = { ...updated[taskId], [type]: cappedNewSeconds };
+        return updated;
     });
   };
   
@@ -115,15 +112,8 @@ const TimeAllocationScreen: React.FC<TimeAllocationScreenProps> = ({
       return 'bg-green-600 hover:bg-green-700'; // Success state
   };
 
-
   return (
     <div className="flex flex-col h-full bg-slate-100 relative">
-      {warning && (
-        <div className="absolute top-[10px] left-1/2 -translate-x-1/2 w-11/12 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-md shadow-lg z-10 animate-fadeIn" role="alert">
-          <p className="font-bold">{warning}</p>
-        </div>
-      )}
-
       <main className="flex-grow flex flex-col p-4 space-y-4 overflow-hidden">
         <div className="bg-white rounded-xl shadow p-4 flex flex-col space-y-3 flex-shrink-0">
             <div className="text-center">
@@ -147,10 +137,10 @@ const TimeAllocationScreen: React.FC<TimeAllocationScreenProps> = ({
                     <p className="text-xl font-semibold text-slate-800 tracking-tight mt-1">{formatTime(totalTrackedSeconds)}</p>
                 </div>
                 <div>
-                    <p className="text-xs font-bold text-slate-500 tracking-wider uppercase">UNTRACKED</p>
-                    <p className="text-xl font-semibold text-slate-800 tracking-tight mt-1">{formatTime(totalUntrackedSeconds)}</p>
+                    <p className="text-xs font-bold text-slate-500 tracking-wider uppercase">MANUAL</p>
+                    <p className="text-xl font-semibold text-slate-800 tracking-tight mt-1">{formatTime(totalManualSeconds)}</p>
                 </div>
-                <div>
+                 <div>
                     <p className="text-xs font-bold text-slate-500 tracking-wider uppercase">REMAINING</p>
                     <p className={`text-xl font-semibold tracking-tight mt-1 ${remainingSeconds === 0 ? 'text-green-600' : 'text-slate-800'}`}>
                         {formatTime(Math.max(0, remainingSeconds))}
@@ -160,14 +150,16 @@ const TimeAllocationScreen: React.FC<TimeAllocationScreenProps> = ({
         </div>
         
         <div ref={scrollRef} className="flex-grow bg-white rounded-xl shadow p-2 overflow-y-auto no-scrollbar">
-            <div className="space-y-2">
+            <div className="space-y-3">
                 {TASKS.map(task => (
                     <AllocationTaskCard
                       key={task.id}
                       task={task}
-                      trackedSeconds={allocations[task.id]?.tracked || 0}
-                      manualSeconds={allocations[task.id]?.manual || 0}
+                      originalTrackedSeconds={originalTrackedAllocations[task.id] || 0}
+                      trackedSeconds={allocations[task.id].tracked}
+                      manualSeconds={allocations[task.id].manual}
                       onAllocationChange={handleAllocationChange}
+                      totalShiftSeconds={TOTAL_SHIFT_GOAL_SECONDS}
                     />
                 ))}
             </div>

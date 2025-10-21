@@ -16,6 +16,7 @@ interface ControlCenterProps {
   onClockToggle: () => void;
   timeMultiplier: number;
   canClockIn: boolean;
+  showMap: boolean;
 }
 
 const ControlCenter: React.FC<ControlCenterProps> = ({
@@ -27,7 +28,8 @@ const ControlCenter: React.FC<ControlCenterProps> = ({
   clockInTime,
   onClockToggle,
   timeMultiplier,
-  canClockIn
+  canClockIn,
+  showMap
 }) => {
   const timer = useTimer(clockInTime, isClockedIn, timeMultiplier, { showSeconds: true });
   
@@ -43,12 +45,12 @@ const ControlCenter: React.FC<ControlCenterProps> = ({
 
   return (
     <div className="bg-white rounded-xl shadow-md overflow-hidden">
-      <InteractiveMap
+      {showMap && <InteractiveMap
         currentLocation={currentLocation}
         isInside={isInside}
         distance={distance}
         radius={radius}
-      />
+      />}
       
       <div className="p-4 text-center space-y-4">
           <div>

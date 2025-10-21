@@ -3,9 +3,10 @@ import TestingToolsPanel from './components/TestingToolsPanel';
 import AppV1 from './AppV1';
 import AppV2 from './AppV2';
 import AppV3 from './AppV3';
+import AppV4 from './AppV4';
 import SplashScreen from './components/SplashScreen';
 
-type AppVersion = 'v1' | 'v2' | 'v3';
+type AppVersion = 'v1' | 'v2' | 'v3' | 'v4';
 
 const App: React.FC = () => {
   const [appVersion, setAppVersion] = useState<AppVersion>('v3');
@@ -15,6 +16,7 @@ const App: React.FC = () => {
   const [isGeofenceOverridden, setIsGeofenceOverridden] = useState<boolean>(false);
   const [timeMultiplier, setTimeMultiplier] = useState(1);
   const [simulatedDistance, setSimulatedDistance] = useState<number>(1000); // Start outside at max distance
+  const [showMap, setShowMap] = useState(true);
 
   const appProps = {
     isGeofenceOverridden,
@@ -25,13 +27,15 @@ const App: React.FC = () => {
   const renderAppVersion = () => {
     switch(appVersion) {
       case 'v1':
-        return <AppV1 {...appProps} />;
+        return <AppV1 {...appProps} showMap={showMap} />;
       case 'v2':
         return <AppV2 {...appProps} />;
       case 'v3':
         return <AppV3 {...appProps} />;
+      case 'v4':
+        return <AppV4 {...appProps} />;
       default:
-        return <AppV1 {...appProps} />;
+        return <AppV1 {...appProps} showMap={showMap} />;
     }
   }
 
@@ -51,6 +55,8 @@ const App: React.FC = () => {
           onTimeMultiplierChange={setTimeMultiplier}
           currentVersion={appVersion}
           onVersionChange={setAppVersion}
+          showMap={showMap}
+          onShowMapToggle={() => setShowMap(prev => !prev)}
         />
       </div>
     </>
