@@ -8,7 +8,8 @@ interface HeaderProps {
     showBackButton?: boolean;
     showMoreOptionsButton?: boolean;
     onMoreOptions?: () => void;
-    version?: 'v1' | 'v2';
+    // FIX: Added 'v3' to the version prop type to support the V3 app version.
+    version?: 'v1' | 'v2' | 'v3';
 }
 
 const Header: React.FC<HeaderProps> = ({ title, onBack, showBackButton = false, showMoreOptionsButton = false, onMoreOptions, version }) => {

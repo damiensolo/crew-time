@@ -18,6 +18,7 @@ const TaskTimerScreen: React.FC<TaskTimerScreenProps> = ({ project, isGeofenceOv
   const [isClockedIn, setIsClockedIn] = useState<boolean>(false);
   const [clockInTime, setClockInTime] = useState<Date | null>(null);
   const [simulatedLocation, setSimulatedLocation] = useState<Location | null>(null);
+  const [showAutoClockOutBanner, setShowAutoClockOutBanner] = useState(false);
   const scrollRef = useRef<HTMLElement>(null);
   useDragToScroll(scrollRef);
   
@@ -38,13 +39,10 @@ const TaskTimerScreen: React.FC<TaskTimerScreenProps> = ({ project, isGeofenceOv
   const effectiveIsInside = locationState.isInside || isGeofenceOverridden;
 
   const handleClockToggle = useCallback(() => {
-    if (!effectiveIsInside && !isClockedIn) {
-        return;
-    }
-
     setIsClockedIn(prev => {
       if (!prev) {
         // Clocking IN
+        if (!effectiveIsInside) return false; // Guard against clocking in while outside
         setClockInTime(new Date());
         return true;
       } else {
@@ -60,23 +58,30 @@ const TaskTimerScreen: React.FC<TaskTimerScreenProps> = ({ project, isGeofenceOv
         return false;
       }
     });
-  }, [effectiveIsInside, isClockedIn, clockInTime, timeMultiplier, onShiftEnd]);
+  }, [effectiveIsInside, clockInTime, timeMultiplier, onShiftEnd]);
 
   useEffect(() => {
     // Automatically clock out if user leaves the geofence
     if (isClockedIn && !effectiveIsInside) {
-        setIsClockedIn(false);
-        setClockInTime(null);
-        // Optionally show a notification to the user
-        alert("You have been automatically clocked out for leaving the job site.");
+        handleClockToggle();
+        setShowAutoClockOutBanner(true);
+        const timer = setTimeout(() => setShowAutoClockOutBanner(false), 5000);
+        return () => clearTimeout(timer);
     }
-  }, [isClockedIn, effectiveIsInside]);
+  }, [isClockedIn, effectiveIsInside, handleClockToggle]);
 
   return (
     <div className="flex flex-col h-full">
-      <main ref={scrollRef} className="flex-grow px-4 pt-3 pb-4 space-y-6 overflow-y-auto no-scrollbar">
+      <main ref={scrollRef} className="flex-grow px-4 pt-3 pb-4 space-y-6 overflow-y-auto no-scrollbar relative">
           
-          {!isClockedIn && !effectiveIsInside && locationState.isInside !== null && (
+          {showAutoClockOutBanner && (
+              <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 p-4 rounded-md animate-fadeIn shadow-lg absolute top-0 left-4 right-4 z-10" role="alert">
+                  <p className="font-bold">Auto Clock-Out</p>
+                  <p>You have been automatically clocked out for leaving the job site.</p>
+              </div>
+          )}
+
+          {!isClockedIn && !effectiveIsInside && locationState.isInside !== null && !showAutoClockOutBanner && (
               <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-md animate-fadeIn" role="alert">
                   <p>You must be inside the job site to clock in.</p>
               </div>

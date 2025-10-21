@@ -1,6 +1,6 @@
 import React from 'react';
 
-type AppVersion = 'v1' | 'v2';
+type AppVersion = 'v1' | 'v2' | 'v3';
 
 interface TestingToolsPanelProps {
   isGeofenceOverridden: boolean;
@@ -47,15 +47,21 @@ const TestingToolsPanel: React.FC<TestingToolsPanelProps> = ({
          <div className="flex justify-center rounded-lg bg-slate-200 p-1 mt-3">
             <button
                 onClick={() => onVersionChange('v1')}
-                className={`w-1/2 rounded-md py-1 text-sm font-semibold transition-colors ${currentVersion === 'v1' ? 'bg-white text-slate-800 shadow' : 'text-slate-600'}`}
+                className={`w-1/3 rounded-md py-1 text-sm font-semibold transition-colors ${currentVersion === 'v1' ? 'bg-white text-slate-800 shadow' : 'text-slate-600'}`}
             >
                 V1
             </button>
             <button
                 onClick={() => onVersionChange('v2')}
-                className={`w-1/2 rounded-md py-1 text-sm font-semibold transition-colors ${currentVersion === 'v2' ? 'bg-white text-slate-800 shadow' : 'text-slate-600'}`}
+                className={`w-1/3 rounded-md py-1 text-sm font-semibold transition-colors ${currentVersion === 'v2' ? 'bg-white text-slate-800 shadow' : 'text-slate-600'}`}
             >
                 V2
+            </button>
+             <button
+                onClick={() => onVersionChange('v3')}
+                className={`w-1/3 rounded-md py-1 text-sm font-semibold transition-colors ${currentVersion === 'v3' ? 'bg-white text-slate-800 shadow' : 'text-slate-600'}`}
+            >
+                V3
             </button>
         </div>
       </div>

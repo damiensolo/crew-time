@@ -21,7 +21,6 @@ const TimeAllocationScreen: React.FC<TimeAllocationScreenProps> = ({
   useDragToScroll(scrollRef);
 
   const totalAllocatedSeconds = useMemo(() => {
-    // FIX: Operator '+' cannot be applied to types 'unknown' and 'unknown'. Explicitly type the accumulator and value.
     return Object.values(allocations).reduce((sum: number, seconds: number) => sum + (seconds || 0), 0);
   }, [allocations]);
 
