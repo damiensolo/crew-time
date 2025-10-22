@@ -23,8 +23,13 @@ export const useTimer = (
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
   useEffect(() => {
+    // If the timer isn't running or doesn't have a start time, we shouldn't tick.
     if (!isRunning || !startTime) {
-      if (!isRunning) setElapsedSeconds(0);
+      // Explicitly reset the timer to zero only when the start time is cleared (e.g., on clock-out).
+      // This prevents the timer from resetting on a temporary pause.
+      if (!startTime) {
+        setElapsedSeconds(0);
+      }
       return;
     }
 

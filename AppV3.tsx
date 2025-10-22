@@ -76,8 +76,8 @@ const AppV3: React.FC<AppV3Props> = ({ isGeofenceOverridden, timeMultiplier, sim
 
         <div className={`absolute inset-0 bg-white z-30 transition-transform duration-300 ease-in-out ${shiftDataForAllocation ? 'translate-y-0' : 'translate-y-full'}`}>
           {shiftDataForAllocation && (
+            // FIX: Removed the `totalShiftSeconds` prop as it is not defined in `TimeAllocationScreenProps` for V3.
             <TimeAllocationScreen
-              totalShiftSeconds={shiftDataForAllocation.totalSeconds}
               initialAllocations={shiftDataForAllocation.initialAllocations}
               onConfirm={handleAllocationComplete}
               onCancel={handleAllocationComplete}

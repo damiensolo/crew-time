@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { Task } from '../types';
 import { formatTime } from '../hooks/useTimer';
+import { ClockIcon } from './icons';
 
 interface TimeInputProps {
   label: string;
@@ -93,30 +94,30 @@ const AllocationTaskCard: React.FC<AllocationTaskCardProps> = ({
           <h3 className="font-semibold text-slate-800 text-base truncate">{task.name}</h3>
           <span className="text-xs font-semibold text-slate-500 bg-slate-200 px-2 py-0.5 rounded-full mt-1 inline-block">{task.type}</span>
         </div>
-        <div className="text-right ml-2">
-            <p className="font-mono text-lg font-semibold text-slate-700">{formatTime(totalSeconds)}</p>
-            <p className="text-xs text-slate-500 -mt-1">total</p>
+        <div className="flex items-center space-x-1 text-sm font-bold text-slate-700 whitespace-nowrap">
+            <ClockIcon className="w-4 h-4" />
+            <span>{formatTime(totalSeconds)} total</span>
         </div>
       </div>
 
       {/* Time Allocation Inputs */}
       <div className="border-t border-slate-200 pt-2 space-y-1">
         <TimeInput 
-          label="⏱️ Tracked" 
+          label="Tracked Time" 
           totalSeconds={trackedSeconds} 
           onChange={(seconds) => onTrackedChange(task.id, seconds)} 
         />
         
         {isAddingManualTime || manualSeconds > 0 ? (
           <TimeInput 
-            label="➕ Manual" 
+            label="Manual Time" 
             totalSeconds={manualSeconds} 
             onChange={(seconds) => onManualChange(task.id, seconds)}
           />
         ) : (
           <div className="pt-1">
             <button onClick={handleShowManualInput} className="text-sm font-medium text-orange-600 hover:text-orange-800 py-2 flex items-center space-x-1.5 px-1">
-              <span>➕</span>
+              <span className="font-bold text-lg leading-none relative top-[-1px]">+</span>
               <span>Add manual time</span>
             </button>
           </div>

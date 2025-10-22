@@ -13,10 +13,10 @@ const App: React.FC = () => {
   const [showSplash, setShowSplash] = useState(true);
   
   // State for testing tools, passed down to the active app version
-  const [isGeofenceOverridden, setIsGeofenceOverridden] = useState<boolean>(false);
-  const [timeMultiplier, setTimeMultiplier] = useState(1);
+  const [isGeofenceOverridden, setIsGeofenceOverridden] = useState<boolean>(true);
+  const [timeMultiplier, setTimeMultiplier] = useState(100);
   const [simulatedDistance, setSimulatedDistance] = useState<number>(1000); // Start outside at max distance
-  const [showMap, setShowMap] = useState(true);
+  const [showMap, setShowMap] = useState(false);
 
   const appProps = {
     isGeofenceOverridden,
