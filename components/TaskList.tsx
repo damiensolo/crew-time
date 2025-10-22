@@ -3,6 +3,7 @@ import TaskCard from './TaskCard';
 import { TASKS } from '../constants';
 import type { Task } from '../types';
 import { XIcon, CameraIcon, PhotoIcon, DocumentIcon } from './icons';
+import CameraCaptureModal from './CameraCaptureModal';
 
 // --- Start of inlined ImageModal component ---
 interface ImageModalProps {
@@ -119,13 +120,14 @@ const TaskList: React.FC = () => {
   const [isActionSheetOpen, setIsActionSheetOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
   const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
+  const [isCameraModalOpen, setIsCameraModalOpen] = useState(false);
 
 
   const handleToggle = (taskId: number) => {
     setExpandedTaskId(prevId => (prevId === taskId ? null : taskId));
   };
 
-  const handleAttachPhoto = (taskId: number) => {
+  const handleAttachPlaceholderPhoto = (taskId: number) => {
     if (!taskId) return;
     setAttachedPhotos(prev => {
       const existingPhotos = prev[taskId] || [];
@@ -141,6 +143,20 @@ const TaskList: React.FC = () => {
     });
   };
 
+  const handlePhotoCaptured = (imageDataUrl: string) => {
+    if (selectedTaskId) {
+        setAttachedPhotos(prev => {
+            const existingPhotos = prev[selectedTaskId] || [];
+            const newPhoto = { id: Date.now(), url: imageDataUrl };
+            return {
+                ...prev,
+                [selectedTaskId]: [...existingPhotos, newPhoto]
+            };
+        });
+    }
+    setIsCameraModalOpen(false); // Close modal after capture
+  };
+
   const handleRemovePhoto = (taskId: number, photoId: number) => {
     setAttachedPhotos(prev => ({
       ...prev,
@@ -152,14 +168,20 @@ const TaskList: React.FC = () => {
     setSelectedTaskId(taskId);
     setIsActionSheetOpen(true);
   };
+  
+  const handleOpenRealCamera = () => {
+      if(selectedTaskId) {
+          setIsCameraModalOpen(true);
+      }
+  };
 
   const handlePhotoClick = (url: string) => {
     setSelectedImageUrl(url);
   };
 
   const actions: AttachmentAction[] = [
-    { label: 'Take a Photo', icon: CameraIcon, onClick: () => { if (selectedTaskId) handleAttachPhoto(selectedTaskId); } },
-    { label: 'Photo Library', icon: PhotoIcon, onClick: () => { if (selectedTaskId) handleAttachPhoto(selectedTaskId); } },
+    { label: 'Take a Photo', icon: CameraIcon, onClick: handleOpenRealCamera },
+    { label: 'Photo Library', icon: PhotoIcon, onClick: () => { if (selectedTaskId) handleAttachPlaceholderPhoto(selectedTaskId); } },
     { label: 'Add a File', icon: DocumentIcon, onClick: () => { alert('File attachment coming soon!'); } },
   ];
 
@@ -188,6 +210,12 @@ const TaskList: React.FC = () => {
         <ImageModal 
           src={selectedImageUrl} 
           onClose={() => setSelectedImageUrl(null)} 
+        />
+      )}
+      {isCameraModalOpen && (
+        <CameraCaptureModal
+            onCapture={handlePhotoCaptured}
+            onClose={() => setIsCameraModalOpen(false)}
         />
       )}
     </>
