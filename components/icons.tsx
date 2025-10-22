@@ -121,6 +121,6 @@ export const CheckIcon: React.FC<{ className?: string }> = ({ className = 'w-8 h
 
 export const ArrowPathIcon: React.FC<{ className?: string }> = ({ className = 'w-8 h-8' }) => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0011.664 0l3.18-3.182m-3.182-4.991v4.99" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15 4.5a9.002 9.002 0 0 0-11.48 3.834L2.028 6.528A.75.75 0 0 0 .75 7.5v6A.75.75 0 0 0 1.5 14.25h6a.75.75 0 0 0 .53-1.28L6.196 11.14A7.502 7.502 0 0 1 15 4.5z" />
     </svg>
 );
