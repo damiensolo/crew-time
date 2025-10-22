@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import TaskCard from './TaskCard';
 import { TASKS } from '../constants';
 import type { Task } from '../types';
-import { XIcon } from './icons';
+import { XIcon, CameraIcon, PhotoIcon, DocumentIcon } from './icons';
 
 // --- Start of inlined ImageModal component ---
 interface ImageModalProps {
@@ -44,72 +44,68 @@ const ImageModal: React.FC<ImageModalProps> = ({ src, onClose }) => {
 // --- End of inlined ImageModal component ---
 
 
-// --- Start of inlined ActionSheet component ---
-export interface ActionSheetAction {
+// --- Start of inlined AttachmentSheet component ---
+interface AttachmentAction {
   label: string;
+  icon: React.FC<{ className?: string }>;
   onClick: () => void;
-  isDestructive?: boolean;
 }
 
-interface ActionSheetProps {
+interface AttachmentSheetProps {
   isOpen: boolean;
   onClose: () => void;
-  actions: ActionSheetAction[];
+  actions: AttachmentAction[];
 }
 
-const ActionSheet: React.FC<ActionSheetProps> = ({ isOpen, onClose, actions }) => {
+const AttachmentSheet: React.FC<AttachmentSheetProps> = ({ isOpen, onClose, actions }) => {
   if (!isOpen) {
     return null;
   }
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-end justify-center" 
+      className="fixed inset-0 z-50 flex items-end" 
       aria-modal="true" 
       role="dialog"
     >
       {/* Backdrop */}
       <div 
-        className="absolute inset-0 bg-black/30 animate-fadeIn"
+        className="absolute inset-0 bg-black/40 animate-fadeIn"
         onClick={onClose}
       />
       
       {/* Sheet */}
-      <div className="relative z-10 w-full max-w-sm p-2 pb-3">
-        <div className="flex flex-col space-y-2" style={{ animation: 'fadeInUp 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)' }}>
-          {/* Action Group */}
-          <div className="bg-white/80 backdrop-blur-xl rounded-xl">
-            {actions.map((action, index) => (
-              <React.Fragment key={action.label}>
-                <button
-                  onClick={() => {
-                    action.onClick();
-                    onClose();
-                  }}
-                  className={`w-full p-3 text-center text-lg transition-colors ${
-                    action.isDestructive ? 'text-red-500' : 'text-blue-500'
-                  } active:bg-slate-300/60`}
-                >
-                  {action.label}
-                </button>
-                {index < actions.length - 1 && <hr className="border-slate-300/50" />}
-              </React.Fragment>
-            ))}
-          </div>
-
-          {/* Cancel Button */}
-          <button
-            onClick={onClose}
-            className="w-full p-3 text-center text-lg text-blue-500 font-semibold bg-white rounded-xl active:bg-slate-100"
-          >
-            Cancel
+      <div className="relative z-10 w-full bg-white rounded-t-2xl shadow-xl" style={{ animation: 'fadeInUp 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)' }}>
+        <div className="pt-4 px-4 pb-2 text-center relative">
+          <div className="w-10 h-1.5 bg-slate-300 rounded-full mx-auto" />
+          <button onClick={onClose} className="absolute top-2 right-2 text-slate-400 hover:text-slate-600 p-2" aria-label="Close attachment options">
+            <XIcon className="w-6 h-6" />
           </button>
         </div>
+
+        <ul className="py-2 px-4 pb-4">
+          {actions.map((action, index) => (
+            <li key={index}>
+              <button
+                onClick={() => {
+                  action.onClick();
+                  onClose();
+                }}
+                className="w-full flex items-center p-3 text-left text-lg text-slate-800 rounded-lg hover:bg-slate-100 active:bg-slate-200 transition-colors"
+              >
+                <div className="bg-slate-100 p-2 rounded-lg mr-4">
+                  <action.icon className="w-6 h-6 text-slate-700" />
+                </div>
+                <span className="font-medium">{action.label}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
       </div>
     </div>
   );
 };
-// --- End of inlined ActionSheet component ---
+// --- End of inlined AttachmentSheet component ---
 
 interface Photo {
   id: number;
@@ -161,10 +157,10 @@ const TaskList: React.FC = () => {
     setSelectedImageUrl(url);
   };
 
-  const actions: ActionSheetAction[] = [
-    { label: 'Take Photo', onClick: () => { if (selectedTaskId) handleAttachPhoto(selectedTaskId); } },
-    { label: 'Photo Gallery', onClick: () => { if (selectedTaskId) handleAttachPhoto(selectedTaskId); } },
-    { label: 'Attach File', onClick: () => { alert('File attachment coming soon!'); } },
+  const actions: AttachmentAction[] = [
+    { label: 'Take a Photo', icon: CameraIcon, onClick: () => { if (selectedTaskId) handleAttachPhoto(selectedTaskId); } },
+    { label: 'Photo Library', icon: PhotoIcon, onClick: () => { if (selectedTaskId) handleAttachPhoto(selectedTaskId); } },
+    { label: 'Add a File', icon: DocumentIcon, onClick: () => { alert('File attachment coming soon!'); } },
   ];
 
   return (
@@ -183,7 +179,7 @@ const TaskList: React.FC = () => {
           />
         ))}
       </div>
-      <ActionSheet 
+      <AttachmentSheet 
         isOpen={isActionSheetOpen}
         onClose={() => setIsActionSheetOpen(false)}
         actions={actions}

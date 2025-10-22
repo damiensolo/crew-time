@@ -1,7 +1,7 @@
 import type { Task, Location, Project } from './types';
 
 export const TASKS: Task[] = [
-  { id: 1, name: 'Module Cleaning and Ins...', type: 'T&M' },
+  { id: 1, name: 'Module Cleaning', type: 'T&M' },
   { id: 2, name: 'Site Preparation', type: 'PL' },
   { id: 3, name: 'Excavation', type: 'ST' },
   { id: 4, name: 'Foundation', type: 'ST' },
