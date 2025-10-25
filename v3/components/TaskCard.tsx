@@ -29,7 +29,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, isClockedIn, isRunning, elaps
         </div>
         <div className="flex items-center space-x-3">
           <p className={`font-mono text-lg font-semibold transition-colors ${timerColor}`}>
-            {formatTime(elapsedSeconds, { showSeconds: true })}
+            {formatTime(elapsedSeconds)}
           </p>
           <button 
             onClick={onTimerToggle}

@@ -27,7 +27,6 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, isExpanded, onToggle, photos,
             <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full flex-shrink-0">{task.type}</span>
           </div>
           <div className="flex items-center space-x-2">
-            <p className="font-mono text-slate-600">00:00</p>
             <ChevronDownIcon className={`w-5 h-5 text-slate-400 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
           </div>
         </div>
