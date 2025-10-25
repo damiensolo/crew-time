@@ -35,7 +35,7 @@ const TimeAllocationScreen: React.FC<TimeAllocationScreenProps> = ({
   }, [initialAllocations]);
 
   const totalTrackedTimeFromShift = useMemo(() => 
-    // FIX: Explicitly type the accumulator and value in the `reduce` callback to resolve a type inference issue.
+    // Fix: Explicitly type the accumulator and value in the `reduce` callback to resolve a type inference issue.
     Object.values(originalTrackedAllocations).reduce((sum: number, seconds: number) => sum + seconds, 0),
     [originalTrackedAllocations]
   );
@@ -53,7 +53,7 @@ const TimeAllocationScreen: React.FC<TimeAllocationScreenProps> = ({
   const { totalTrackedSeconds, totalManualSeconds, totalAllocatedTime } = useMemo(() => {
     let tracked = 0;
     let manual = 0;
-    // FIX: Cast the result of Object.values to the correct type to help TypeScript's type inference.
+    // Fix: Cast the result of Object.values to the correct type to help TypeScript's type inference.
     for (const alloc of Object.values(allocations) as Allocation[]) {
         tracked += alloc.tracked;
         manual += alloc.manual;

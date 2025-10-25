@@ -3,7 +3,7 @@ import TaskList from '../components/TaskList';
 import ControlCenter from '../components/ControlCenter';
 import { useGeolocation } from '../hooks/useGeolocation';
 import { TARGET_LOCATION, GEOFENCE_RADIUS_METERS } from '../constants';
-import type { GeolocationState, Project, Location } from '../types';
+import type { GeolocationState, Project, Location, ClockEvent } from '../types';
 import { useDragToScroll } from '../hooks/useDragToScroll';
 
 interface TaskTimerScreenProps {
@@ -22,6 +22,7 @@ const TaskTimerScreen: React.FC<TaskTimerScreenProps> = ({ project, isGeofenceOv
   const [clockInTime, setClockInTime] = useState<Date | null>(null);
   const [simulatedLocation, setSimulatedLocation] = useState<Location | null>(null);
   const [showAutoClockOutBanner, setShowAutoClockOutBanner] = useState(false);
+  const [clockLog, setClockLog] = useState<ClockEvent[]>([]);
   const scrollRef = useRef<HTMLElement>(null);
   useDragToScroll(scrollRef);
   
@@ -47,9 +48,11 @@ const TaskTimerScreen: React.FC<TaskTimerScreenProps> = ({ project, isGeofenceOv
         // Clocking IN
         if (!effectiveIsInside) return false; // Guard against clocking in while outside
         setClockInTime(new Date());
+        setClockLog(log => [...log, { type: 'in', timestamp: new Date() }]);
         return true;
       } else {
         // Clocking OUT
+        setClockLog(log => [...log, { type: 'out', timestamp: new Date() }]);
         if (clockInTime) {
           const durationSeconds = Math.floor((new Date().getTime() - clockInTime.getTime()) / 1000);
           let simulatedDuration = durationSeconds * timeMultiplier;
@@ -126,6 +129,8 @@ const TaskTimerScreen: React.FC<TaskTimerScreenProps> = ({ project, isGeofenceOv
             timeMultiplier={timeMultiplier}
             canClockIn={effectiveIsInside}
             showMap={showMap}
+            project={project}
+            clockLog={clockLog}
           />
         
         <h2 className="text-slate-800 font-bold text-xl pt-2">Today's tasks</h2>

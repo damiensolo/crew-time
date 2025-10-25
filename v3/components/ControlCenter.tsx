@@ -1,6 +1,6 @@
-import React from 'react';
-import type { Project } from '../../types';
-import { PinIcon } from '../../components/icons';
+import React, { useState } from 'react';
+import type { Project, ClockEvent } from '../../types';
+import { PinIcon, ChevronDownIcon } from '../../components/icons';
 import { useTimer } from '../../hooks/useTimer';
 
 interface ControlCenterProps {
@@ -10,6 +10,7 @@ interface ControlCenterProps {
   timeMultiplier: number;
   onClockToggle: () => void;
   canClockIn: boolean;
+  clockLog: ClockEvent[];
 }
 
 const ControlCenter: React.FC<ControlCenterProps> = ({
@@ -19,8 +20,10 @@ const ControlCenter: React.FC<ControlCenterProps> = ({
   timeMultiplier,
   onClockToggle,
   canClockIn,
+  clockLog
 }) => {
   const timer = useTimer(clockInTime, isClockedIn, timeMultiplier, { showSeconds: true });
+  const [isLogExpanded, setIsLogExpanded] = useState(false);
   
   const getButtonClasses = () => {
     if (isClockedIn) {
@@ -33,6 +36,14 @@ const ControlCenter: React.FC<ControlCenterProps> = ({
     }
     // A disabled gray button
     return 'bg-slate-400 cursor-not-allowed';
+  };
+
+  const formatLogTime = (date: Date) => {
+    return date.toLocaleString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+    });
   };
 
   return (
@@ -56,11 +67,45 @@ const ControlCenter: React.FC<ControlCenterProps> = ({
       </div>
 
       {isClockedIn && (
-        <div className="bg-slate-50 border-t border-slate-200 px-4 py-2 flex items-center justify-center space-x-2 animate-fadeIn">
-          <PinIcon className="w-4 h-4 text-slate-500 flex-shrink-0" />
-          <p className="text-sm text-slate-600 truncate">
-            Clocked in at: {project.address}
-          </p>
+        <div className="bg-slate-50 border-t border-slate-200">
+          <button
+            onClick={() => setIsLogExpanded(!isLogExpanded)}
+            className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-slate-100 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+            aria-expanded={isLogExpanded}
+            aria-controls="clock-log-v3"
+          >
+            <div className="flex items-center space-x-2 min-w-0">
+              <PinIcon className="w-4 h-4 text-slate-500 flex-shrink-0" />
+              <p className="text-sm text-slate-600 truncate">
+                Clocked in at: {project.address}
+              </p>
+            </div>
+            <ChevronDownIcon className={`w-5 h-5 text-slate-400 transition-transform duration-300 ${isLogExpanded ? 'rotate-180' : ''}`} />
+          </button>
+          
+          <div
+            id="clock-log-v3"
+            className={`transition-all duration-300 ease-in-out overflow-hidden ${isLogExpanded ? 'max-h-48' : 'max-h-0'}`}
+          >
+            <div className="p-4 border-t border-slate-200">
+              <h4 className="text-xs font-bold text-slate-500 tracking-wider uppercase mb-3 text-left">
+                Clock In / Out Log
+              </h4>
+              <ul className="space-y-2 text-sm text-slate-700">
+                {clockLog.length > 0 ? clockLog.map((event, index) => (
+                  <li key={index} className="flex items-center justify-between animate-fadeInUp" style={{animationDelay: `${index * 50}ms`}}>
+                    <div className="flex items-center">
+                      <span className={`w-2.5 h-2.5 rounded-full mr-3 ${event.type === 'in' ? 'bg-green-500' : 'bg-red-500'}`} />
+                      <span>{event.type === 'in' ? 'Clock In' : 'Clock Out'}</span>
+                    </div>
+                    <span className="font-mono">{formatLogTime(event.timestamp)}</span>
+                  </li>
+                )) : (
+                  <li className="text-slate-500 text-center py-2">No clock events for this shift.</li>
+                )}
+              </ul>
+            </div>
+          </div>
         </div>
       )}
     </div>

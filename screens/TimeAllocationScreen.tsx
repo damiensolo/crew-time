@@ -24,7 +24,7 @@ const TimeAllocationScreen: React.FC<TimeAllocationScreenProps> = ({
   useDragToScroll(scrollRef);
 
   const totalAllocatedSeconds = useMemo(() => {
-    // FIX: Explicitly type the accumulator (sum) and value (seconds) in the `reduce` callback to resolve a type inference issue.
+    // Fix: Explicitly type the accumulator (sum) and value (seconds) in the `reduce` callback to resolve a type inference issue.
     const tracked = Object.values(trackedAllocations).reduce((sum: number, seconds: number) => sum + (seconds || 0), 0);
     const manual = Object.values(manualAllocations).reduce((sum: number, seconds: number) => sum + (seconds || 0), 0);
     return tracked + manual;

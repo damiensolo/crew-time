@@ -21,3 +21,8 @@ export interface GeolocationState {
     distance: number | null;
     error: string | null;
 }
+
+export interface ClockEvent {
+    type: 'in' | 'out';
+    timestamp: Date;
+}

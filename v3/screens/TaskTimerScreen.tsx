@@ -3,7 +3,7 @@ import TaskList from '../components/TaskList';
 import ControlCenter from '../components/ControlCenter';
 import { useGeolocation } from '../../hooks/useGeolocation';
 import { TARGET_LOCATION, GEOFENCE_RADIUS_METERS, TASKS } from '../../constants';
-import type { GeolocationState, Project, Location } from '../../types';
+import type { GeolocationState, Project, Location, ClockEvent } from '../../types';
 import { useDragToScroll } from '../../hooks/useDragToScroll';
 
 interface TaskTimerScreenProps {
@@ -28,6 +28,7 @@ const TaskTimerScreen: React.FC<TaskTimerScreenProps> = ({ project, isGeofenceOv
   );
   const [activeTask, setActiveTask] = useState<{ id: number; startTime: number } | null>(null);
   const [currentTime, setCurrentTime] = useState(Date.now());
+  const [clockLog, setClockLog] = useState<ClockEvent[]>([]);
 
   useEffect(() => {
     if (activeTask && isClockedIn) {
@@ -69,6 +70,7 @@ const TaskTimerScreen: React.FC<TaskTimerScreenProps> = ({ project, isGeofenceOv
     setIsClockedIn(prevIsClockedIn => {
       // Clocking OUT
       if (prevIsClockedIn) {
+        setClockLog(log => [...log, { type: 'out', timestamp: new Date() }]);
         let finalTaskTimes = { ...taskTimers };
         if (activeTask) {
           const elapsed = (Date.now() - activeTask.startTime) * timeMultiplier;
@@ -96,6 +98,7 @@ const TaskTimerScreen: React.FC<TaskTimerScreenProps> = ({ project, isGeofenceOv
       } 
       // Clocking IN
       else {
+        setClockLog(log => [...log, { type: 'in', timestamp: new Date() }]);
         setClockInTime(new Date());
         return true;
       }
@@ -142,6 +145,7 @@ const TaskTimerScreen: React.FC<TaskTimerScreenProps> = ({ project, isGeofenceOv
                 timeMultiplier={timeMultiplier}
                 onClockToggle={handleClockToggle}
                 canClockIn={effectiveIsInside}
+                clockLog={clockLog}
             />
         </div>
       <main ref={scrollRef} className="flex-grow px-4 pb-4 space-y-6 overflow-y-auto no-scrollbar">
