@@ -28,6 +28,7 @@ const TestingToolsPanel: React.FC<TestingToolsPanelProps> = ({
   onShowMapToggle,
 }) => {
   const maxDistance = 1000;
+  const versions: AppVersion[] = ['v1', 'v2', 'v3', 'v4'];
 
   const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const sliderValue = Number(e.target.value);
@@ -49,34 +50,24 @@ const TestingToolsPanel: React.FC<TestingToolsPanelProps> = ({
       <div className="text-center">
         <h4 className="text-sm font-semibold text-slate-700">App Version</h4>
          <div className="flex justify-center rounded-lg bg-slate-200 p-1 mt-3">
-            <button
-                onClick={() => onVersionChange('v1')}
-                className={`w-1/4 rounded-md py-1 text-sm font-semibold transition-colors ${currentVersion === 'v1' ? 'bg-white text-slate-800 shadow' : 'text-slate-600'}`}
-            >
-                V1
-            </button>
-            <button
-                onClick={() => onVersionChange('v2')}
-                className={`w-1/4 rounded-md py-1 text-sm font-semibold transition-colors ${currentVersion === 'v2' ? 'bg-white text-slate-800 shadow' : 'text-slate-600'}`}
-            >
-                V2
-            </button>
-             <button
-                onClick={() => onVersionChange('v3')}
-                className={`w-1/4 rounded-md py-1 text-sm font-semibold transition-colors ${currentVersion === 'v3' ? 'bg-white text-slate-800 shadow' : 'text-slate-600'}`}
-            >
-                V3
-            </button>
-            <button
-                onClick={() => onVersionChange('v4')}
-                className={`w-1/4 rounded-md py-1 text-sm font-semibold transition-colors ${currentVersion === 'v4' ? 'bg-white text-slate-800 shadow' : 'text-slate-600'}`}
-            >
-                V4
-            </button>
+            {versions.map((version) => (
+              <button
+                key={version}
+                type="button"
+                onClick={() => onVersionChange(version)}
+                className={`w-1/4 rounded-md py-1 text-sm font-semibold transition-colors ${
+                  currentVersion === version
+                    ? 'bg-white text-slate-800 shadow'
+                    : 'text-slate-600'
+                }`}
+              >
+                {version.toUpperCase()}
+              </button>
+            ))}
         </div>
       </div>
 
-      {currentVersion === 'v1' && (
+      {currentVersion === 'v1' && onShowMapToggle && (
         <>
           <hr/>
           <div>
@@ -84,6 +75,7 @@ const TestingToolsPanel: React.FC<TestingToolsPanelProps> = ({
               <div className="flex items-center justify-center space-x-2 mt-3">
                   <label htmlFor="map-toggle" className="text-sm text-gray-600 font-medium">Status: {showMap ? 'Visible' : 'Hidden'}</label>
                   <button
+                      type="button"
                       id="map-toggle"
                       onClick={onShowMapToggle}
                       className={`relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 ${showMap ? 'bg-green-500' : 'bg-gray-300'}`}
@@ -107,6 +99,7 @@ const TestingToolsPanel: React.FC<TestingToolsPanelProps> = ({
           <div className="flex items-center justify-center space-x-2 mt-3">
               <label htmlFor="geofence-toggle" className="text-sm text-gray-600 font-medium">Status: {isGeofenceOverridden ? 'Active' : 'Inactive'}</label>
               <button
+                  type="button"
                   id="geofence-toggle"
                   onClick={onGeofenceOverrideToggle}
                   className={`relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 ${isGeofenceOverridden ? 'bg-green-500' : 'bg-gray-300'}`}
@@ -148,6 +141,7 @@ const TestingToolsPanel: React.FC<TestingToolsPanelProps> = ({
           {[1, 10, 100, 1000].map(speed => (
             <button
               key={speed}
+              type="button"
               onClick={() => onTimeMultiplierChange(speed)}
               className={`px-4 py-2 text-sm font-semibold rounded-lg transition-colors ${
                 timeMultiplier === speed

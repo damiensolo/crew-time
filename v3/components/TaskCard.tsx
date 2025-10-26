@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import type { Task, ClockEvent } from '../../types';
-import { PlayIcon, PauseIcon, ChevronDownIcon, XCircleIconSolid } from '../../components/icons';
+import { PlayIcon, PauseIcon, ChevronDownIcon, XCircleIconSolid, PaperclipIcon } from '../../components/icons';
 import { formatTime } from '../../hooks/useTimer';
 
 interface Photo {
@@ -44,11 +44,17 @@ const TaskCard: React.FC<TaskCardProps> = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto'; // Reset height
-      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+    if (textareaRef.current && isExpanded) {
+      // Use a timeout to ensure the browser has calculated the correct scrollHeight
+      // after the element becomes visible from being hidden.
+      setTimeout(() => {
+        if (textareaRef.current) {
+          textareaRef.current.style.height = 'auto'; // Reset height
+          textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+        }
+      }, 0);
     }
-  }, [note]);
+  }, [note, isExpanded]);
 
   const cardBg = isRunning ? 'bg-blue-50 border-blue-200' : 'bg-white';
   const timerColor = isRunning ? 'text-blue-600' : 'text-slate-600';
@@ -69,6 +75,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
       <div className="p-4 flex items-center justify-between">
         <div className="flex items-center space-x-3 min-w-0">
           <button 
+            type="button"
             onClick={onTimerToggle}
             disabled={!isClockedIn}
             className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors flex-shrink-0 ${buttonColor} ${buttonHoverColor} ${buttonDisabledStyles}`}
@@ -86,6 +93,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
             {formatTime(elapsedSeconds)}
           </p>
           <button 
+            type="button"
             onClick={onToggle} 
             className="text-slate-400 hover:text-slate-600 p-1"
             aria-label="Toggle task details"
@@ -100,52 +108,57 @@ const TaskCard: React.FC<TaskCardProps> = ({
       >
         <div className="px-4 pt-4 pb-4 space-y-4 border-t border-slate-200/80">
           
-          <textarea
-              ref={textareaRef}
-              value={note}
-              onChange={(e) => onNoteChange(task.id, e.target.value)}
-              placeholder="Add a note..."
-              rows={1}
-              className="w-full pl-3 pr-3 py-2 text-base bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none overflow-hidden"
-              aria-label={`Note for task ${task.name}`}
-          />
+          <div className="relative flex items-center">
+            <textarea
+                ref={textareaRef}
+                value={note}
+                onChange={(e) => onNoteChange(task.id, e.target.value)}
+                placeholder="Write a comment..."
+                rows={1}
+                className="w-full pl-4 pr-12 py-3 text-base bg-slate-100 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none overflow-hidden"
+                aria-label={`Comment for task ${task.name}`}
+            />
+            <button 
+                type="button"
+                onClick={() => onOpenAttachmentSheet(task.id)} 
+                className="absolute right-3 text-slate-500 hover:text-blue-600 transition-colors"
+                aria-label="Add attachment"
+            >
+                <PaperclipIcon className="w-6 h-6" />
+            </button>
+          </div>
 
           {/* Attachments Section */}
-          <div>
-            {photos.length > 0 && (
-                <div className="flex space-x-3 overflow-x-auto pb-2 -mx-4 px-4 no-scrollbar">
-                    {photos.map(photo => (
-                    <div key={photo.id} className="relative flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden group shadow-sm">
-                        <img 
-                        src={photo.url} 
-                        alt="Attached content" 
-                        className="w-full h-full object-cover bg-slate-200 cursor-pointer" 
-                        onClick={() => onPhotoClick(photo.url)}
-                        />
-                        <button
+          {photos.length > 0 && (
+              <div className="flex space-x-3 overflow-x-auto pb-2 -mx-4 px-4 no-scrollbar">
+                  {photos.map(photo => (
+                  <div key={photo.id} className="relative flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden group shadow-sm">
+                      <img 
+                      src={photo.url} 
+                      alt="Attached content" 
+                      className="w-full h-full object-cover bg-slate-200 cursor-pointer" 
+                      onClick={() => onPhotoClick(photo.url)}
+                      />
+                      <button
+                        type="button"
                         onClick={(e) => {
                             e.stopPropagation();
                             onRemovePhoto(task.id, photo.id);
                         }}
                         className="absolute top-1 right-1 text-white opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100"
                         aria-label="Remove photo"
-                        >
-                        <XCircleIconSolid className="w-5 h-5" />
-                        </button>
-                    </div>
-                    ))}
-                </div>
-            )}
-            <button onClick={() => onOpenAttachmentSheet(task.id)} className="text-sm font-medium text-blue-600 hover:text-blue-800 py-2 flex items-center space-x-1.5 px-1">
-              <span className="font-bold text-lg leading-none relative top-[-1px]">+</span>
-              <span>Add Attachment</span>
-            </button>
-          </div>
+                      >
+                      <XCircleIconSolid className="w-5 h-5" />
+                      </button>
+                  </div>
+                  ))}
+              </div>
+          )}
           
           {/* Activity Log Section */}
           {log.length > 0 && (
             <div>
-              <label className="text-xs font-bold text-slate-500 tracking-wider uppercase">Activity Log</label>
+              <label className="text-xs font-bold text-slate-500 tracking-wider uppercase">ACTIVITY LOG</label>
               <ul className="mt-2 space-y-2 text-sm text-slate-700">
                 {log.map((event, index) => (
                   <li key={index} className="flex items-center justify-between animate-fadeInUp" style={{animationDelay: `${index * 50}ms`}}>
