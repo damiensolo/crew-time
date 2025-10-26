@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import type { Task } from '../../types';
+import type { Task, ClockEvent } from '../../types';
 import { formatTime } from '../../hooks/useTimer';
 import { ChatBubbleIcon, ChevronDownIcon } from '../../components/icons';
 
@@ -9,6 +9,7 @@ interface AllocationTaskCardProps {
   allocatedSeconds: number;
   onAllocationChange: (taskId: number, seconds: number) => void;
   totalShiftSeconds: number;
+  log: ClockEvent[];
 }
 
 const AllocationTaskCard: React.FC<AllocationTaskCardProps> = ({
@@ -17,8 +18,10 @@ const AllocationTaskCard: React.FC<AllocationTaskCardProps> = ({
   allocatedSeconds,
   onAllocationChange,
   totalShiftSeconds,
+  log,
 }) => {
   const [isNoteExpanded, setIsNoteExpanded] = useState(false);
+  const [isLogExpanded, setIsLogExpanded] = useState(false);
   const [note, setNote] = useState('');
   
   const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -48,6 +51,13 @@ const AllocationTaskCard: React.FC<AllocationTaskCardProps> = ({
     }
   }, [allocatedSeconds, originalTrackedSeconds, totalShiftSeconds]);
 
+  const formatLogTime = (date: Date) => {
+    return date.toLocaleString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+    });
+  };
 
   return (
     <div className="bg-slate-50 rounded-lg p-4 flex flex-col space-y-4 transition-shadow hover:shadow-sm border border-slate-200/80">
@@ -104,11 +114,12 @@ const AllocationTaskCard: React.FC<AllocationTaskCardProps> = ({
           <hr className="!mt-3 border-slate-200" />
           <div className="flex flex-col items-start !mt-2">
             <button
+              type="button"
               onClick={() => setIsNoteExpanded(!isNoteExpanded)}
               className="flex items-center space-x-1.5 text-sm font-medium text-blue-600 hover:text-blue-800"
             >
               <ChatBubbleIcon className="w-4 h-4" />
-              <span>+ Add Note</span>
+              <span>Add Note</span>
               <ChevronDownIcon className={`w-4 h-4 transition-transform duration-200 ${isNoteExpanded ? 'rotate-180' : ''}`} />
             </button>
             <div className={`w-full overflow-hidden transition-all duration-300 ease-in-out ${isNoteExpanded ? 'max-h-40 mt-2' : 'max-h-0'}`}>
@@ -118,6 +129,37 @@ const AllocationTaskCard: React.FC<AllocationTaskCardProps> = ({
                 placeholder="Add reason for time adjustment..."
                 className="w-full h-24 p-2 text-sm border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
               />
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Activity Log Section */}
+      {log.length > 0 && (
+        <>
+          <hr className="!mt-3 border-slate-200" />
+          <div className="flex flex-col items-start !mt-2">
+            <button
+              type="button"
+              onClick={() => setIsLogExpanded(!isLogExpanded)}
+              className="w-full flex justify-between items-center text-sm font-medium text-blue-600 hover:text-blue-800 p-1"
+              aria-expanded={isLogExpanded}
+            >
+              <span className="font-bold">Activity Log</span>
+              <ChevronDownIcon className={`w-5 h-5 transition-transform duration-200 ${isLogExpanded ? 'rotate-180' : ''}`} />
+            </button>
+            <div className={`w-full overflow-hidden transition-all duration-300 ease-in-out ${isLogExpanded ? 'max-h-48 pt-2' : 'max-h-0'}`}>
+              <ul className="space-y-2 text-sm text-slate-700 border-t border-slate-200 pt-3">
+                {log.map((event, index) => (
+                  <li key={index} className="flex items-center justify-between animate-fadeInUp" style={{animationDelay: `${index * 50}ms`}}>
+                    <div className="flex items-center">
+                      <span className={`w-2.5 h-2.5 rounded-full mr-3 ${event.type === 'in' ? 'bg-green-500' : 'bg-red-500'}`} />
+                      <span>{event.type === 'in' ? 'Started' : 'Stopped'}</span>
+                    </div>
+                    <span className="font-mono">{formatLogTime(event.timestamp)}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
         </>

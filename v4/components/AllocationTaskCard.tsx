@@ -113,6 +113,7 @@ const AllocationTaskCard: React.FC<AllocationTaskCardProps> = ({
             </div>
              {log.length > 0 && (
                 <button 
+                    type="button"
                     onClick={() => setIsLogExpanded(prev => !prev)} 
                     className="text-slate-400 hover:text-slate-600 p-1"
                     aria-label="Toggle activity log"
@@ -182,11 +183,12 @@ const AllocationTaskCard: React.FC<AllocationTaskCardProps> = ({
           <hr className="!mt-4 border-slate-200" />
           <div className="flex flex-col items-start !mt-3">
             <button
+              type="button"
               onClick={() => setIsNoteExpanded(!isNoteExpanded)}
               className="flex items-center space-x-1.5 text-sm font-medium text-indigo-600 hover:text-indigo-800"
             >
               <ChatBubbleIcon className="w-4 h-4" />
-              <span>+ Add Note</span>
+              <span>Add Note</span>
               <ChevronDownIcon className={`w-4 h-4 transition-transform duration-200 ${isNoteExpanded ? 'rotate-180' : ''}`} />
             </button>
             <div className={`w-full overflow-hidden transition-all duration-300 ease-in-out ${isNoteExpanded ? 'max-h-40 mt-2' : 'max-h-0'}`}>

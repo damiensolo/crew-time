@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react';
 import TaskTimerScreen from './v3/screens/TaskTimerScreen';
 import ProjectListScreen from './v3/screens/ProjectListScreen';
 import Header from './components/Header';
-import type { Project } from './types';
+import type { Project, ClockEvent } from './types';
 import TimeAllocationScreen from './v3/screens/TimeAllocationScreen';
 
 interface AppV3Props {
@@ -16,6 +16,7 @@ const AppV3: React.FC<AppV3Props> = ({ isGeofenceOverridden, timeMultiplier, sim
   const [shiftDataForAllocation, setShiftDataForAllocation] = useState<{ 
     totalSeconds: number;
     initialAllocations: Record<number, number>;
+    taskLogs: Record<number, ClockEvent[]>;
   } | null>(null);
 
   const handleSelectProject = useCallback((project: Project) => {
@@ -26,10 +27,11 @@ const AppV3: React.FC<AppV3Props> = ({ isGeofenceOverridden, timeMultiplier, sim
     setSelectedProject(null);
   }, []);
 
-  const handleShiftEnd = useCallback((data: { totalSeconds: number; finalTaskTimes: Record<number, number> }) => {
+  const handleShiftEnd = useCallback((data: { totalSeconds: number; finalTaskTimes: Record<number, number>; taskLogs: Record<number, ClockEvent[]> }) => {
     setShiftDataForAllocation({ 
       totalSeconds: data.totalSeconds, 
-      initialAllocations: data.finalTaskTimes 
+      initialAllocations: data.finalTaskTimes,
+      taskLogs: data.taskLogs
     });
   }, []);
 
@@ -76,9 +78,9 @@ const AppV3: React.FC<AppV3Props> = ({ isGeofenceOverridden, timeMultiplier, sim
 
         <div className={`absolute inset-0 bg-white z-30 transition-transform duration-300 ease-in-out ${shiftDataForAllocation ? 'translate-y-0' : 'translate-y-full'}`}>
           {shiftDataForAllocation && (
-            // FIX: Removed the `totalShiftSeconds` prop as it is not defined in `TimeAllocationScreenProps` for V3.
             <TimeAllocationScreen
               initialAllocations={shiftDataForAllocation.initialAllocations}
+              taskLogs={shiftDataForAllocation.taskLogs}
               onConfirm={handleAllocationComplete}
               onCancel={handleAllocationComplete}
             />

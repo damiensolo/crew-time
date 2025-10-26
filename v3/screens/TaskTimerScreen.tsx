@@ -11,7 +11,7 @@ interface TaskTimerScreenProps {
   isGeofenceOverridden: boolean;
   timeMultiplier: number;
   simulatedDistance: number;
-  onShiftEnd: (data: { totalSeconds: number; finalTaskTimes: Record<number, number> }) => void;
+  onShiftEnd: (data: { totalSeconds: number; finalTaskTimes: Record<number, number>; taskLogs: Record<number, ClockEvent[]> }) => void;
 }
 
 const SHIFT_DURATION_SECONDS = 8 * 60 * 60; // 8 hours
@@ -111,7 +111,7 @@ const TaskTimerScreen: React.FC<TaskTimerScreenProps> = ({ project, isGeofenceOv
         const totalMinutes = Math.round(totalShiftSeconds / 60);
         const roundedTotalSeconds = totalMinutes * 60;
 
-        onShiftEnd({ totalSeconds: roundedTotalSeconds, finalTaskTimes });
+        onShiftEnd({ totalSeconds: roundedTotalSeconds, finalTaskTimes, taskLogs });
         
         // Reset state
         setClockInTime(null);
@@ -127,7 +127,7 @@ const TaskTimerScreen: React.FC<TaskTimerScreenProps> = ({ project, isGeofenceOv
         return true;
       }
     });
-  }, [effectiveIsInside, activeTask, taskTimers, timeMultiplier, onShiftEnd, clockInTime]);
+  }, [effectiveIsInside, activeTask, taskTimers, timeMultiplier, onShiftEnd, clockInTime, taskLogs]);
 
   useEffect(() => {
     if (!isClockedIn || !clockInTime) {

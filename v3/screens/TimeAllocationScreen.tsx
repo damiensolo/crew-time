@@ -3,9 +3,11 @@ import { TASKS } from '../../constants';
 import AllocationTaskCard from '../components/AllocationTaskCard';
 import { formatTime } from '../../hooks/useTimer';
 import { useDragToScroll } from '../../hooks/useDragToScroll';
+import type { ClockEvent } from '../../types';
 
 interface TimeAllocationScreenProps {
   initialAllocations: Record<number, number>; 
+  taskLogs: Record<number, ClockEvent[]>;
   onConfirm: () => void;
   onCancel: () => void;
 }
@@ -14,6 +16,7 @@ const TOTAL_SHIFT_GOAL_SECONDS = 8 * 60 * 60; // 8 hours - The source of truth f
 
 const TimeAllocationScreen: React.FC<TimeAllocationScreenProps> = ({
   initialAllocations,
+  taskLogs,
   onConfirm,
 }) => {
   const [isConfirming, setIsConfirming] = useState(false);
@@ -157,6 +160,7 @@ const TimeAllocationScreen: React.FC<TimeAllocationScreenProps> = ({
                       allocatedSeconds={allocations[task.id] || 0}
                       onAllocationChange={handleAllocationChange}
                       totalShiftSeconds={TOTAL_SHIFT_GOAL_SECONDS}
+                      log={taskLogs[task.id] || []}
                     />
                 ))}
             </div>

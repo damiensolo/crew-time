@@ -115,11 +115,12 @@ const AllocationTaskCard: React.FC<AllocationTaskCardProps> = ({
             <hr className="border-slate-200" />
             <div className="flex flex-col items-start">
                 <button
+                    type="button"
                     onClick={() => setIsNoteExpanded(!isNoteExpanded)}
                     className="flex items-center space-x-1.5 text-sm font-medium text-blue-600 hover:text-blue-800"
                 >
                     <ChatBubbleIcon className="w-4 h-4" />
-                    <span>+ Add Note</span>
+                    <span>Add Note</span>
                     <ChevronDownIcon className={`w-4 h-4 transition-transform duration-200 ${isNoteExpanded ? 'rotate-180' : ''}`} />
                 </button>
                 <div className={`w-full overflow-hidden transition-all duration-300 ease-in-out ${isNoteExpanded ? 'max-h-40 mt-2' : 'max-h-0'}`}>
