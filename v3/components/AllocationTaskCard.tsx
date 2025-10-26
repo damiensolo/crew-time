@@ -69,7 +69,7 @@ const AllocationTaskCard: React.FC<AllocationTaskCardProps> = ({
           
           {/* Visual Track */}
           <div className="absolute w-full h-3 bg-slate-200 rounded-full top-1/2 -translate-y-1/2" />
-          <div style={{ width: `${trackedPct}%`}} className="absolute h-3 bg-indigo-500 rounded-l-full transition-all duration-100 top-1/2 -translate-y-1/2" />
+          <div style={{ width: `${trackedPct}%`}} className="absolute h-3 bg-blue-500 rounded-l-full transition-all duration-100 top-1/2 -translate-y-1/2" />
           <div style={{ left: `${originalMarkerPct}%`, width: `${untrackedPct}%`}} className="absolute h-3 bg-amber-400 transition-all duration-100 top-1/2 -translate-y-1/2" />
           <div style={{ left: `${originalMarkerPct}%`}} title={`Original tracked time: ${formatTime(originalTrackedSeconds)}`} className="absolute top-1/2 -translate-y-1/2 h-5 w-1 bg-slate-700 rounded-full" />
           
@@ -81,14 +81,14 @@ const AllocationTaskCard: React.FC<AllocationTaskCardProps> = ({
             value={allocatedSeconds}
             step={60}
             onChange={handleSliderChange}
-            className="absolute w-full h-3 top-1/2 -translate-y-1/2 appearance-none bg-transparent cursor-pointer group-focus-within:outline-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-6 [&::-webkit-slider-thumb]:w-6 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:ring-2 [&::-webkit-slider-thumb]:ring-indigo-600 [&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:h-6 [&::-moz-range-thumb]:w-6 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:shadow-md [&::-moz-range-thumb]:ring-2 [&::-moz-range-thumb]:ring-indigo-600"
+            className="absolute w-full h-3 top-1/2 -translate-y-1/2 appearance-none bg-transparent cursor-pointer group-focus-within:outline-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-6 [&::-webkit-slider-thumb]:w-6 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:ring-2 [&::-webkit-slider-thumb]:ring-blue-600 [&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:h-6 [&::-moz-range-thumb]:w-6 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:shadow-md [&::-moz-range-thumb]:ring-2 [&::-moz-range-thumb]:ring-blue-600"
           />
         </div>
 
         {/* Time Breakdown Labels */}
         <div className="flex justify-between items-center text-xs font-medium text-slate-500 mt-2 px-1">
           <span>
-            <span className="font-bold text-indigo-600">Tracked:</span> {formatTime(trackedTime)}
+            <span className="font-bold text-blue-600">Tracked:</span> {formatTime(trackedTime)}
           </span>
           {untrackedTime > 0 && (
             <span className="transition-opacity duration-300">
@@ -105,7 +105,7 @@ const AllocationTaskCard: React.FC<AllocationTaskCardProps> = ({
           <div className="flex flex-col items-start !mt-2">
             <button
               onClick={() => setIsNoteExpanded(!isNoteExpanded)}
-              className="flex items-center space-x-1.5 text-sm font-medium text-indigo-600 hover:text-indigo-800"
+              className="flex items-center space-x-1.5 text-sm font-medium text-blue-600 hover:text-blue-800"
             >
               <ChatBubbleIcon className="w-4 h-4" />
               <span>+ Add Note</span>
@@ -116,7 +116,7 @@ const AllocationTaskCard: React.FC<AllocationTaskCardProps> = ({
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
                 placeholder="Add reason for time adjustment..."
-                className="w-full h-24 p-2 text-sm border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+                className="w-full h-24 p-2 text-sm border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
               />
             </div>
           </div>

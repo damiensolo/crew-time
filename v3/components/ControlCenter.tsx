@@ -70,7 +70,7 @@ const ControlCenter: React.FC<ControlCenterProps> = ({
         <div className="bg-slate-50 border-t border-slate-200">
           <button
             onClick={() => setIsLogExpanded(!isLogExpanded)}
-            className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-slate-100 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+            className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-slate-100 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
             aria-expanded={isLogExpanded}
             aria-controls="clock-log-v3"
           >

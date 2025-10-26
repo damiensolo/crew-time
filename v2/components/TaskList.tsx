@@ -1,7 +1,7 @@
 import React from 'react';
 import TaskCard from './TaskCard';
 import { TASKS } from '../../constants';
-import type { Task } from '../../types';
+import type { Task, ClockEvent } from '../../types';
 
 interface TaskListProps {
   isClockedIn: boolean;
@@ -11,6 +11,7 @@ interface TaskListProps {
   currentTime: number;
   activeTaskStartTime: number | null;
   timeMultiplier: number;
+  taskLogs: Record<number, ClockEvent[]>;
 }
 
 const TaskList: React.FC<TaskListProps> = ({
@@ -21,6 +22,7 @@ const TaskList: React.FC<TaskListProps> = ({
   currentTime,
   activeTaskStartTime,
   timeMultiplier,
+  taskLogs,
 }) => {
   return (
     <div className="space-y-3">
@@ -42,6 +44,7 @@ const TaskList: React.FC<TaskListProps> = ({
             isRunning={isRunning}
             elapsedSeconds={baseSeconds + activeSeconds}
             onTimerToggle={() => onTaskTimerToggle(task.id)}
+            log={taskLogs[task.id] || []}
           />
         )
       })}

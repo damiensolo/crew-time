@@ -182,7 +182,6 @@ const TaskList: React.FC = () => {
   const actions: AttachmentAction[] = [
     { label: 'Take a Photo', icon: CameraIcon, onClick: handleOpenRealCamera },
     { label: 'Photo Library', icon: PhotoIcon, onClick: () => { if (selectedTaskId) handleAttachPlaceholderPhoto(selectedTaskId); } },
-    { label: 'Add a File', icon: DocumentIcon, onClick: () => { alert('File attachment coming soon!'); } },
   ];
 
   return (

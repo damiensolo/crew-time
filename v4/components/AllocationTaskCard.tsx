@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import type { Task } from '../../types';
+import type { Task, ClockEvent } from '../../types';
 import { formatTime } from '../../hooks/useTimer';
 import { ChatBubbleIcon, ChevronDownIcon } from '../../components/icons';
 
@@ -66,6 +66,7 @@ interface AllocationTaskCardProps {
   manualSeconds: number;
   onAllocationChange: (taskId: number, type: 'tracked' | 'manual', seconds: number) => void;
   totalShiftSeconds: number;
+  log: ClockEvent[];
 }
 
 const AllocationTaskCard: React.FC<AllocationTaskCardProps> = ({
@@ -75,8 +76,10 @@ const AllocationTaskCard: React.FC<AllocationTaskCardProps> = ({
   manualSeconds,
   onAllocationChange,
   totalShiftSeconds,
+  log,
 }) => {
   const [isNoteExpanded, setIsNoteExpanded] = useState(false);
+  const [isLogExpanded, setIsLogExpanded] = useState(false);
   const [note, setNote] = useState('');
   
   const handleTimeChange = (type: 'tracked' | 'manual', newHours: number, newMinutes: number) => {
@@ -91,13 +94,33 @@ const AllocationTaskCard: React.FC<AllocationTaskCardProps> = ({
   const manualPct = (manualSeconds / totalShiftSeconds) * 100;
   const originalMarkerPct = (originalTrackedSeconds / totalShiftSeconds) * 100;
 
+  const formatLogTime = (date: Date) => {
+    return date.toLocaleString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+    });
+  };
+
   return (
     <div className="bg-slate-50 rounded-lg p-4 flex flex-col space-y-3 transition-shadow hover:shadow-sm border border-slate-200/80">
       <div className="flex items-start justify-between">
         <h3 className="font-semibold text-slate-800 text-base leading-tight pr-4">{task.name}</h3>
-        <div className="text-right flex-shrink-0">
-          <p className="font-mono text-lg font-semibold text-slate-700">{formatTime(totalTaskSeconds)}</p>
-          <p className="text-xs text-slate-500 -mt-1">total</p>
+        <div className="text-right flex-shrink-0 flex items-center">
+            <div className="mr-2">
+                <p className="font-mono text-lg font-semibold text-slate-700">{formatTime(totalTaskSeconds)}</p>
+                <p className="text-xs text-slate-500 -mt-1">total</p>
+            </div>
+             {log.length > 0 && (
+                <button 
+                    onClick={() => setIsLogExpanded(prev => !prev)} 
+                    className="text-slate-400 hover:text-slate-600 p-1"
+                    aria-label="Toggle activity log"
+                    aria-expanded={isLogExpanded}
+                >
+                    <ChevronDownIcon className={`w-5 h-5 transition-transform duration-300 ${isLogExpanded ? 'rotate-180' : ''}`} />
+                </button>
+            )}
         </div>
       </div>
       
@@ -129,6 +152,29 @@ const AllocationTaskCard: React.FC<AllocationTaskCardProps> = ({
           totalSeconds={manualSeconds}
           onTimeChange={(h, m) => handleTimeChange('manual', h, m)}
         />
+      </div>
+
+      <div 
+        className={`transition-all duration-300 ease-in-out overflow-hidden ${isLogExpanded ? 'max-h-48 pt-3' : 'max-h-0'}`}
+      >
+        <div className="border-t border-slate-200 pt-3">
+            <h4 className="text-xs font-bold text-slate-500 tracking-wider uppercase mb-3 text-left">
+                Activity Log
+            </h4>
+            <ul className="space-y-2 text-sm text-slate-700">
+                {log.length > 0 ? log.map((event, index) => (
+                <li key={index} className="flex items-center justify-between animate-fadeInUp" style={{animationDelay: `${index * 50}ms`}}>
+                    <div className="flex items-center">
+                    <span className={`w-2.5 h-2.5 rounded-full mr-3 ${event.type === 'in' ? 'bg-green-500' : 'bg-red-500'}`} />
+                    <span>{event.type === 'in' ? 'Started' : 'Stopped'}</span>
+                    </div>
+                    <span className="font-mono">{formatLogTime(event.timestamp)}</span>
+                </li>
+                )) : (
+                <li className="text-slate-500 text-center py-2">No activity for this task.</li>
+                )}
+            </ul>
+        </div>
       </div>
 
       {(manualSeconds > 0 || trackedSeconds < originalTrackedSeconds) && (

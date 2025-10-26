@@ -26,7 +26,7 @@ const ProjectListScreen: React.FC<ProjectListScreenProps> = ({ onSelectProject }
           placeholder="Search Projects"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full px-3 py-2 text-base bg-slate-100 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400"
+          className="w-full px-3 py-2 text-base bg-slate-100 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
         />
       </div>
       <div ref={scrollRef} className="flex-grow overflow-y-auto no-scrollbar">
@@ -38,7 +38,7 @@ const ProjectListScreen: React.FC<ProjectListScreenProps> = ({ onSelectProject }
                     className="w-full px-4 py-2.5 text-left flex items-center justify-between transition-colors hover:bg-slate-50 active:bg-slate-100"
                 >
                     <div className="flex-1 min-w-0">
-                        <p className="text-[17px] font-semibold text-indigo-600 truncate">{project.name}</p>
+                        <p className="text-[17px] font-semibold text-blue-600 truncate">{project.name}</p>
                         <div className="flex items-center mt-1 text-slate-500">
                             <PinIcon className="w-4 h-4 mr-1.5 flex-shrink-0" />
                             <p className="text-[15px] truncate">{project.address}</p>

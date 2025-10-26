@@ -29,6 +29,7 @@ const TaskTimerScreen: React.FC<TaskTimerScreenProps> = ({ project, isGeofenceOv
   const [activeTask, setActiveTask] = useState<{ id: number; startTime: number } | null>(null);
   const [currentTime, setCurrentTime] = useState(Date.now());
   const [clockLog, setClockLog] = useState<ClockEvent[]>([]);
+  const [taskLogs, setTaskLogs] = useState<Record<number, ClockEvent[]>>({});
 
   useEffect(() => {
     if (activeTask && isClockedIn) {
@@ -43,23 +44,44 @@ const TaskTimerScreen: React.FC<TaskTimerScreenProps> = ({ project, isGeofenceOv
   const handleTaskTimerToggle = useCallback((taskId: number) => {
     if (!isClockedIn) return;
 
-    setTaskTimers(prevTimers => {
-      let updatedTimers = { ...prevTimers };
-      let newActiveTask = null;
+    const now = new Date();
+    const nowTime = now.getTime();
 
-      if (activeTask) {
-        const elapsed = (Date.now() - activeTask.startTime) * timeMultiplier;
-        updatedTimers[activeTask.id] += Math.round(elapsed / 1000);
-      }
-      
-      if (activeTask?.id !== taskId) {
-        newActiveTask = { id: taskId, startTime: Date.now() };
-      }
+    setActiveTask(currentActiveTask => {
+        // Log events
+        setTaskLogs(prevLogs => {
+            const newLogs = { ...prevLogs };
 
-      setActiveTask(newActiveTask);
-      return updatedTimers;
+            if (currentActiveTask) {
+                const currentTaskLogs = newLogs[currentActiveTask.id] || [];
+                newLogs[currentActiveTask.id] = [...currentTaskLogs, { type: 'out', timestamp: now }];
+            }
+
+            if (currentActiveTask?.id !== taskId) {
+                const newTaskLogs = newLogs[taskId] || [];
+                newLogs[taskId] = [...newTaskLogs, { type: 'in', timestamp: now }];
+            }
+            return newLogs;
+        });
+
+        // Update timers
+        setTaskTimers(prevTimers => {
+            const newTimers = { ...prevTimers };
+            if (currentActiveTask) {
+                const elapsed = (nowTime - currentActiveTask.startTime) * timeMultiplier;
+                newTimers[currentActiveTask.id] += Math.round(elapsed / 1000);
+            }
+            return newTimers;
+        });
+
+        // Determine and return the new active task state
+        if (currentActiveTask?.id !== taskId) {
+            return { id: taskId, startTime: nowTime };
+        } else {
+            return null; // Toggling the same task off
+        }
     });
-  }, [isClockedIn, activeTask, timeMultiplier]);
+  }, [isClockedIn, timeMultiplier]);
 
 
   const handleClockToggle = useCallback(() => {
@@ -94,6 +116,7 @@ const TaskTimerScreen: React.FC<TaskTimerScreenProps> = ({ project, isGeofenceOv
         setClockInTime(null);
         setActiveTask(null);
         setTaskTimers(TASKS.reduce((acc, task) => ({ ...acc, [task.id]: 0 }), {}));
+        setTaskLogs({});
         return false;
       } 
       // Clocking IN
@@ -158,6 +181,7 @@ const TaskTimerScreen: React.FC<TaskTimerScreenProps> = ({ project, isGeofenceOv
           currentTime={currentTime}
           activeTaskStartTime={activeTask?.startTime || null}
           timeMultiplier={timeMultiplier}
+          taskLogs={taskLogs}
         />
       </main>
     </div>
